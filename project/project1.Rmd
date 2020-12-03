@@ -1,8 +1,309 @@
 ---
 title: "Project 1"
-author: "Me"
-date: "2020-12-01"
+author: "Britney Bailey, EID: bnb2375"
+date: "2020-10-18"
 output: html_document
 ---
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE, eval = TRUE, fig.align = "center", warning = F, message = F,
+tidy=TRUE, tidy.opts=list(width.cutoff=60), R.options=list(max.print=100))
+```
 
-## Test Project 1
+##About the data
+In my project, I have chosen to include two datasets, which I will refer to as `cdc` and `hospital`. The `cdc` dataset contains information from the CDC on mortality in different cities/counties in the US. Some of the variables in the `cdc` dataset include number of deaths, death rates compared to the national rate, population size of the county, and crude mortality rates. 
+
+The `hospital` dataset is sourced from the medicare website, where the government makes data available regarding patients in different cities/counties. The `hospital` dataset contains information related to hospital complications and patient deaths. This dataset is particularly concerned with grouping the data by facility, and some of the variables in the `hospital` dataset include Facility ID, Facility name, Facility address. The `hospital` dataset also includes information regarding a `Score` variable, which refers to what is essentially a measure of patient happiness/satisfaction. Hospitals are given a score based on how they perform, with higher scores given to better hospitals. 
+
+```{r}
+#load required packages
+library(dplyr) 
+library(tidyverse)
+#read in the data
+library(readxl)
+hospital <- read_excel("comp.xlsx")
+cdc <-read_excel("cause.xlsx")
+
+#rename the datasets
+#change cdc variable `county` to sentence case
+hospital %>% rename("County"= "County Name") -> hospital
+hospital %>% mutate(County= str_to_sentence(County)) -> hospital
+
+#remove the state from the `county` variable in the cdc dataset and make it a new variable
+cdc <- cdc %>% separate(County, sep=",", into=c("County", "State_abbr"))
+
+#get rid of "County" in each dataset
+cdc %>% mutate(County= str_remove(County, " County"))
+```
+
+
+```{r}
+#join the two datasets based on the county variable
+join <- inner_join(hospital, cdc, by = "County")
+```
+
+I considered going with a full join so that I would retain all the original data, but I ended up doing an inner join, as it would make it easier to work with the data because I wouldn't have to deal with as many NAs(unmatched rows would be dropped). I also found inner join to be fitting here because I am comparing across datasets, so it is helpful to only include counties where data is available from each dataset.
+I found the full/inner join approach superior to a right or left join because neither dataset was particularly more interesting or important to keep intact, and I am mostly interested in the intersection of both datasets; I am not particularly more interested in one than the other.
+
+My ID variable for the join was county. I reformatted the county variables in the original datasets so that they were compatible. 
+
+In the `hospital` dataset, there are 91152 observations of 18 variables.
+In the `cdc` dataset, there are 3199 observations of 9 variables.
+In the combined dataset, there are 997 observations of 27 variables. 
+
+The values from the original dataset that were dropped in the creation of the combined dataset are values for which data from that County was only present in one of the datasets, and not both. So, because the `cdc` dataset is small in number of observations compared to the `hospital` dataset, the brevity of the `cdc` dataset is likely the cause of the relatively small number of observations (relative to the size of the `hospital` dataset) in the joined dataset.
+
+
+##Using all 6 core `dplyr` functions
+```{R}
+#see how many rows are from VA (Using filter)
+join %>%filter(State.x=="VA")
+#there are 629 entries from VA.
+```
+```{r}
+#Select only the state and death rate for each row (Using Select)
+join %>% select(State.x, Deaths)
+```
+```{r}
+#What is the mean death rate by state? (Using group_by, summarize)
+join %>% group_by(State.x) %>% summarize(mean(Deaths))
+```
+```{R}
+#Which hospitals/states are rated the lowest? (Using arrange)
+join %>% select("Facility Name", "State.y", "Score") %>% arrange(Score)
+#Which are rated the highest?
+join %>% filter(Score!="Not Available") %>% select("Facility Name", "State.y", "Score") %>% arrange(desc(Score))
+```
+```{R}
+#Create a new variable that compares the Death rate to the size of the population. (Using mutate)
+join %>% mutate(Prop_death=(Deaths/Population)) 
+```
+
+##Summary Statistics
+###Creating summary statistics without first grouping by a categorical variable
+```{R}
+#mean for each numerical variable
+join %>% select_if(is.numeric) %>% summarize_all(mean)
+
+#standard deviation for each numerical variable
+join %>% select_if(is.numeric) %>% summarize_all(sd)
+
+#how many observations in the dataset?
+
+###looking at the whole dataset:
+join %>% summarize(n())
+###looking at only the numeric variables:
+join %>% select_if(is.numeric) %>% summarize(n())
+###looking at one numerical variable, Facility ID:
+join %>% summarize(`Facility ID`, n())
+
+#quantiles for each numerical variable (had to omit NAs)
+join %>% na.omit() %>% select_if(is.numeric) %>% summarize_all(quantile)
+ 
+#min for each numerical variable
+join %>% select_if(is.numeric) %>% summarize_all(min) 
+
+#max for each numerical variable
+join %>% select_if(is.numeric) %>% summarize_all(max) 
+
+#correlation for each numeric variable (for plots)
+join %>% na.omit() %>% select_if(is.numeric) %>% cor() -> joincor
+#looks like there is a strong correlation between the size of the population and the death rate, which makes sense; the more people in an area, the more people in that area will die.
+```
+
+###Creating summary statistics by first grouping by a categorical variable
+```{r}
+#mean for each numerical variable
+join %>% group_by(State.y) %>% select_if(is.numeric) %>% summarize_all(mean)
+
+#standard deviation for each numerical variable
+join %>% group_by(State.y) %>% select_if(is.numeric) %>% summarize_all(sd)
+
+#how many observations in the dataset?
+###looking at only the numeric variables and grouping by state:
+join %>% group_by(State.y) %>%select_if(is.numeric) %>% summarize(n())
+
+
+#quantiles for each numerical variable (had to omit NAs)
+join %>% group_by(State.y) %>%na.omit() %>% select_if(is.numeric) %>% summarize_all(quantile)
+ 
+#min for each numerical variable
+join %>%group_by(State.y) %>% select_if(is.numeric) %>% summarize_all(min) 
+#max for each numerical variable
+join %>%group_by(State.y) %>% select_if(is.numeric) %>% summarize_all(max) 
+```
+
+###Grouping by two categorical variables simultaneously: How many observations for each variable are there in each group if we group by `Facility ID` and `County`?
+```{r}
+join %>% group_by(`Facility ID`, County) %>% summarise_all(n_distinct)  
+```
+
+#Summmary Statistics: Tables
+```{r}
+library(kableExtra)
+#Average of each numerical variable, by State
+join %>% group_by(State.y) %>% select_if(is.numeric) %>% summarize_all(mean) %>% kbl(caption = "Average of each numerical variable by State") %>% kable_classic(full_width = F, html_font = "Cambria")
+
+#Minimum value present in dataset, by state 
+join %>% group_by(State.y) %>% select_if(is.numeric) %>% select(-`ZIP Code`,-`Footnote`, -`Facility ID`)%>% summarize_all(min) %>% kbl(caption = "Minimum Values, by State") %>% kable_classic(full_width = F, html_font = "Cambria")
+
+#Averaged Crude Rate Statistics, by State
+join %>% group_by(State.y) %>% select(`Crude Rate`,`Crude Rate Lower 95% Confidence Interval`,`Crude Rate Upper 95% Confidence Interval`,`Crude Rate Standard Error`) %>% summarize_all(mean) %>% kbl(caption = "Average Crude Rate Statistics, by State") %>% kable_classic(full_width = F, html_font = "Cambria")
+
+#Average deaths by County
+join %>% group_by(County) %>% summarize(mean(Deaths)) %>% kbl(caption = "Average Death Rate by County") %>% kable_classic(full_width = F, html_font = "Cambria")
+
+
+#Averages for each numerical variable for hospitals in Missouri
+join %>% filter(State.y=="Missouri") %>% group_by(`Facility Name`) %>% summarize_if(is.numeric, mean) %>% kbl(caption = "Averages for hospitals in Missouri") %>% kable_classic(full_width = F, html_font = "Cambria")
+
+#standard deviation for Virginia's numerical data
+#I removed the sd for zip code because that isn't really important/informational to run summary statistics on.
+join %>% filter(State.y=="Virginia") %>% select(Deaths, Population, `Crude Rate`,`Crude Rate Lower 95% Confidence Interval`,`Crude Rate Upper 95% Confidence Interval`,`Crude Rate Standard Error`,`% of Total Deaths`) %>% summarize_if(is.numeric, sd) %>% kbl(caption = "Standard Deviation for Data from the State of Virginia") %>% kable_classic(full_width = F, html_font = "Cambria")
+
+#how many observations are in the dataset for each county?
+join %>% group_by(County) %>% summarize(County, n()) %>% summarize_all(mean) %>% kbl(caption = "Number of Observations by County") %>% kable_classic(full_width = F, html_font = "Cambria")
+
+#quantiles for each numerical variable (had to omit NAs)
+join %>% filter(State.y=="Virginia") %>% na.omit() %>% select_if(is.numeric) %>% summarize_all(quantile) %>% kbl(caption = "Quantiles for Data from Virginia") %>% kable_classic(full_width = F, html_font = "Cambria")
+
+#Maximum value present in dataset for each variable for counties in Virginia
+join %>% group_by(County) %>% filter(State.y=="Virginia") %>% select_if(is.numeric) %>%  select(-`ZIP Code`, -`Footnote`, -`Facility ID`) %>% summarize_all(min) %>% kbl(caption = "Maximum Values by County, For Counties in Virginia") %>% kable_classic(full_width = F, html_font = "Cambria")
+```
+
+##Using pivot_longer and pivot_wider to make the data wide and then long again
+```{R}
+#rename state_abbr to stateabbr to make pivoting easier
+join <-join %>% rename(Stateabbr = State_abbr)
+#pivot
+widejoin<- join %>%pivot_wider(names_from="Measure ID" , values_from="Population")
+longjoin <- widejoin %>% pivot_longer(contains("_"),names_to="Measure ID", values_to="Population")
+#visualize
+glimpse(widejoin)
+glimpse(longjoin)
+```
+Looking at the readout of the datasets, you'll notice that I was able to pivot my data wider and select the values I pivoted, and then pivot longer to recreate my initial dataset.
+
+##Making visualizations (three plots)
+```{R}
+#heatmap
+library(tidyverse)
+library(ggplot2)
+#data
+corjoin <-join%>%select_if(is.numeric)%>% select(-`ZIP Code`,-`Footnote`, -`Facility ID`)%>%cor(use="pair")%>%as.data.frame%>%
+rownames_to_column%>%pivot_longer(-1)
+#plot
+ggplot(data = corjoin, aes(rowname, name, fill = value))+ geom_tile(color = "white")+ scale_fill_gradient2(low = "blue", high = "red", mid = "white",midpoint = 0, limit = c(-1,1), space = "Lab",  name="Pearson\nCorrelation") + theme_minimal()+ theme(axis.text.x = element_text(angle = 45, vjust = 1, size = 10, hjust = 1))+ geom_text(size=2.5, aes(label=round(value,2)))+ coord_fixed()
+```
+
+Based on the correlation matrix, one can see a strong correlations betweeen Deaths and Population, and strong correlations between the Crude rate lower 95% confidence interval and the Crude rate upper 95% confidence interval.
+
+The correlation between Deaths and Population makes sense; in counties with large populations, a higher number of deaths is expected because of the high number of habitants.
+The strong correlation between the Crude rate lower 95% confidence interval and the Crude rate upper 95% confidence interval, indicates that when the upper confidence interval increases, the lower confidence interval increases by a similar amount. 
+
+```{r}
+#Death, county: which counites have better scores? 
+#make score a numerical variable, remove footnote because it has so many NAs
+join %>%select(-`Footnote`)%>% mutate(Score = as.numeric(Score))-> join2
+#Get the average scores by county
+join2%>%select(County,Score,Population)%>% na.omit%>% group_by(County) %>% summarize(Avg=mean(Score))->avgjoin
+#graph
+ggplot(join2, aes(x=City, y=Deaths,color=`Compared to National`))+theme(axis.text.x = element_text(angle = 45, vjust = 1, size = 8, hjust = 1))+geom_point()+scale_color_brewer(palette="Dark2")
+
+```
+
+I created the City vs Deaths scatter plot to see if there is a trend across counties' recorded total deaths and hospital scores compared to the national average. Instead, the graph revealed something else about my data: there are gaps of information. I expected to see more of the points colored in blues, oranges, and brown, indicating high/low scores. However, man of the points are purple or green, indicating either no detectable difference from the national rate or that information not available. The lack of infomation is likely in the national database; these counties may not have recorded enough score measures for a reasonable comparison to be published of the county scores vs the national rate. 
+
+Either way, this graph indicates that for several of the counties, there is data not available, or no difference could be detected between the county rate and national rate.
+
+```{r}
+#summary graph
+library("RColorBrewer")
+ggplot(join2, aes(x=County, fill=Population))+geom_bar(aes(y=Score), stat="summary", fun=mean)+theme(axis.text.x = element_text(angle = 45, vjust = 1, size = 10, hjust = 1))+scale_fill_gradient(low="blue",high="red")+scale_y_continuous(breaks = c(5, 10, 15, 20, 25, 30, 35)) 
+
+```
+
+##Clustering (k-means)
+
+```{r}
+#Using K-means clustering.
+set.seed(348)
+library(cluster)
+library(dplyr)
+#select only numeric data, take out the NAs and remove facility ID and zip code because although that data is numeric, it is not actually informative for running summary statisics on it.
+numericdata <- join2 %>% select_if(is.numeric) %>% na.omit %>% select(-`Facility ID` ,-`ZIP Code`)
+#scale data, run kmeans
+clusterdata <- numericdata %>% na.omit %>%scale %>% kmeans(10)
+#look at the data
+clusterdata$cluster
+clusterdata$centers
+
+#calculate wss
+wss<-vector() 
+for(i in 1:10){
+  data<- numericdata %>% kmeans(i)
+  wss[i]<-data$tot.withinss
+}
+
+#making a graph with wss
+ggplot()+geom_point(aes(x=1:10,y=wss))+geom_path(aes(x=1:10,y=wss))+
+xlab("clusters")+scale_x_continuous(breaks=1:10)
+
+#according to the graph, the elbow appears to be at 2, so 2 is probably a good number of clusters to use.
+clusterdata2 <- numericdata %>% na.omit %>%scale %>% kmeans(2)
+
+#saving the cluster assignments as a column in my dataset
+kmeansclust2<- numericdata %>% mutate(cluster=as.factor(clusterdata2$cluster))
+
+#plot data- color by final custer assignment
+kmeansclust2%>%ggplot(aes(Deaths, Score, color=cluster))+geom_point()
+kmeansclust2%>%ggplot(aes(Score, Population, color=cluster))+geom_point()
+
+#How many observations are in each cluster?
+table(kmeansclust2$cluster)
+#there are 195 observations in cluster 1, and 501 observations in cluster 2.
+```
+
+From the joined dataset, I selected the numeric data, removed the NAs, and dropped the `Facility ID` and `ZIP Code` variables because although these variables are numeric, they are not really infomative in terms of clustering by them. I then performed kmeans clustering on my data. I calculated and plotted WSS to determine a good number of clusters to use. The elbow of the WSS graph occurs at around 2, so 2 seems to be a good number of clusters to use. I saved these cluster assignments as a separate column into my dataset and then plotted the data by Score vs Deaths and Score vs Population, colored by cluster assignment. The clusters are actualy well spread out and grouped together, so the graphs support the choice of 2 as a good number of clusters. 
+
+```{r}
+#computing silhouette width in kmeans
+set.seed(348)
+sil_width<-vector() #create an empty vector to hold the average sil width
+for(i in 2:10){
+kms <- kmeans(numericdata,centers=i) #compute k-means solution
+sil <- silhouette(kms$cluster,dist(numericdata)) #get sil widths
+sil_width[i]<-mean(sil[,3]) #take averages (higher is better)
+}
+
+#according to the following graph, it looks like the max mean sil_width occurs around 7, however, 2 is also still relatively good. 
+ggplot()+geom_line(aes(x=1:10,y=sil_width))+scale_x_continuous(name="k",breaks=1:10)
+#i went ahead and also sorted into 7 clusters, added this as a column to my data, and visualized it.
+
+#sort
+clusterdata8 <- numericdata %>% na.omit %>%scale %>% kmeans(8)
+
+#column
+kmeansclust8<- numericdata %>% mutate(cluster=as.factor(clusterdata8$cluster))
+
+#visualize
+kmeansclust8%>%ggplot(aes(Deaths, Score, color=cluster))+geom_point()
+kmeansclust8%>%ggplot(aes(Score, Population, color=cluster))+geom_point()
+
+```
+
+I also wanted to use a more modern approach to calculate the ideal cluster assignment size, so I calculated and plotted maximum average silhouette width. According to the graph, it appears that the maximum sillhouette width occurs around 8, however 2 is also still relatively high up on the graph. I then went ahead and sorted my data into 8 clusters and visualized it using the same variables as I had on the data when I used to clusters above.
+
+For the 8 cluster Score vs population graph, one cluster is separated far based on high score values, and the other seven clusters seem to all overlap eachother near 0 for the score. In the 2 cluster graph, there are still some points plotted near different clusters. But for the 8 cluster graph, one cluster is able to be separated very distinctly from the other 7. The other 7 clusters are more similar in score, but still grouped rather distinctly across the other varibales. The higher number of clusters seems to have allowed for better separation and less mixing of points plotted near other groups that was seen in the 2 cluster graph, so the 8 cluster approach appears superior. 
+
+I also visualized the data based on 7 clusters, because 7 was a close runner up to 8 in the silhouette widths graph. The data for the 7 cluster graph is distributed similarly to the 8 cluster graph (see below). 
+
+```{r}
+#sort
+clusterdata7 <- numericdata %>% na.omit %>%scale %>% kmeans(7)
+#column
+kmeansclust7<- numericdata %>% mutate(cluster=as.factor(clusterdata7$cluster))
+#visualize
+kmeansclust7%>%ggplot(aes(Deaths, Score, color=cluster))+geom_point()
+kmeansclust7%>%ggplot(aes(Score, Population, color=cluster))+geom_point()
+```
+

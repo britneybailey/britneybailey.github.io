@@ -60,7 +60,7 @@
  
 <div class="blog-title">
           <h4>
-         December 1, 2020 
+         October 18, 2020 
             &nbsp;&nbsp;
             
           </h4>
@@ -70,10 +70,2568 @@
           <div class="panel-body">
             <div class="blogpost">
               
+<script src="../../rmarkdown-libs/kePrint/kePrint.js"></script>
+<link href="../../rmarkdown-libs/lightable/lightable.css" rel="stylesheet" />
 
 
-<div id="test-project-1" class="section level2">
-<h2>Test Project 1</h2>
+<div id="about-the-data" class="section level2">
+<h2>About the data</h2>
+<p>In my project, I have chosen to include two datasets, which I will refer to as <code>cdc</code> and <code>hospital</code>. The <code>cdc</code> dataset contains information from the CDC on mortality in different cities/counties in the US. Some of the variables in the <code>cdc</code> dataset include number of deaths, death rates compared to the national rate, population size of the county, and crude mortality rates.</p>
+<p>The <code>hospital</code> dataset is sourced from the medicare website, where the government makes data available regarding patients in different cities/counties. The <code>hospital</code> dataset contains information related to hospital complications and patient deaths. This dataset is particularly concerned with grouping the data by facility, and some of the variables in the <code>hospital</code> dataset include Facility ID, Facility name, Facility address. The <code>hospital</code> dataset also includes information regarding a <code>Score</code> variable, which refers to what is essentially a measure of patient happiness/satisfaction. Hospitals are given a score based on how they perform, with higher scores given to better hospitals.</p>
+<pre class="r"><code># load required packages
+library(dplyr)
+library(tidyverse)
+# read in the data
+library(readxl)
+hospital &lt;- read_excel(&quot;comp.xlsx&quot;)
+cdc &lt;- read_excel(&quot;cause.xlsx&quot;)
+
+# rename the datasets change cdc variable `county` to
+# sentence case
+hospital &lt;- hospital %&gt;% rename(County = &quot;County Name&quot;)
+hospital &lt;- hospital %&gt;% mutate(County = str_to_sentence(County))
+
+# remove the state from the `county` variable in the cdc
+# dataset and make it a new variable
+cdc &lt;- cdc %&gt;% separate(County, sep = &quot;,&quot;, into = c(&quot;County&quot;, 
+    &quot;State_abbr&quot;))
+
+# get rid of &#39;County&#39; in each dataset
+cdc %&gt;% mutate(County = str_remove(County, &quot; County&quot;))</code></pre>
+<pre><code>## # A tibble: 3,199 x 10
+##    State County State_abbr Deaths Population `Crude Rate` `Crude Rate Low…
+##    &lt;chr&gt; &lt;chr&gt;  &lt;chr&gt;       &lt;dbl&gt;      &lt;dbl&gt;        &lt;dbl&gt;            &lt;dbl&gt;
+##  1 Alab… Autau… &quot; AL&quot;        8957    1031280         868.             850.
+##  2 Alab… Baldw… &quot; AL&quot;       34838    3534863         986.             975.
+##  3 Alab… Barbo… &quot; AL&quot;        5829     549756        1060.            1033.
+##  4 Alab… Bibb   &quot; AL&quot;        4636     442548        1048.            1017.
+##  5 Alab… Blount &quot; AL&quot;       11313    1113629        1016.             997.
+##  6 Alab… Bullo… &quot; AL&quot;        2542     218031        1166.            1121.
+##  7 Alab… Butler &quot; AL&quot;        5521     413126        1336.            1301.
+##  8 Alab… Calho… &quot; AL&quot;       27386    2303483        1189.            1175.
+##  9 Alab… Chamb… &quot; AL&quot;        9203     696260        1322.            1295.
+## 10 Alab… Chero… &quot; AL&quot;        6173     506976        1218.            1187.
+## # … with 3,189 more rows, and 3 more variables: `Crude Rate Upper 95%
+## #   Confidence Interval` &lt;dbl&gt;, `Crude Rate Standard Error` &lt;dbl&gt;, `% of Total
+## #   Deaths` &lt;dbl&gt;</code></pre>
+<pre class="r"><code># join the two datasets based on the county variable
+join &lt;- inner_join(hospital, cdc, by = &quot;County&quot;)</code></pre>
+<p>I considered going with a full join so that I would retain all the original data, but I ended up doing an inner join, as it would make it easier to work with the data because I wouldn't have to deal with as many NAs(unmatched rows would be dropped). I also found inner join to be fitting here because I am comparing across datasets, so it is helpful to only include counties where data is available from each dataset. I found the full/inner join approach superior to a right or left join because neither dataset was particularly more interesting or important to keep intact, and I am mostly interested in the intersection of both datasets; I am not particularly more interested in one than the other.</p>
+<p>My ID variable for the join was county. I reformatted the county variables in the original datasets so that they were compatible.</p>
+<p>In the <code>hospital</code> dataset, there are 91152 observations of 18 variables. In the <code>cdc</code> dataset, there are 3199 observations of 9 variables. In the combined dataset, there are 997 observations of 27 variables.</p>
+<p>The values from the original dataset that were dropped in the creation of the combined dataset are values for which data from that County was only present in one of the datasets, and not both. So, because the <code>cdc</code> dataset is small in number of observations compared to the <code>hospital</code> dataset, the brevity of the <code>cdc</code> dataset is likely the cause of the relatively small number of observations (relative to the size of the <code>hospital</code> dataset) in the joined dataset.</p>
+</div>
+<div id="using-all-6-core-dplyr-functions" class="section level2">
+<h2>Using all 6 core <code>dplyr</code> functions</h2>
+<pre class="r"><code># see how many rows are from VA (Using filter)
+join %&gt;% filter(State.x == &quot;VA&quot;)</code></pre>
+<pre><code>## # A tibble: 629 x 27
+##    `Facility ID` `Facility Name` Address City  State.x `ZIP Code` County
+##            &lt;dbl&gt; &lt;chr&gt;           &lt;chr&gt;   &lt;chr&gt; &lt;chr&gt;        &lt;dbl&gt; &lt;chr&gt; 
+##  1        490001 NORTON COMMUNI… 100  1… NORT… VA           24273 Norto…
+##  2        490001 NORTON COMMUNI… 100  1… NORT… VA           24273 Norto…
+##  3        490001 NORTON COMMUNI… 100  1… NORT… VA           24273 Norto…
+##  4        490001 NORTON COMMUNI… 100  1… NORT… VA           24273 Norto…
+##  5        490001 NORTON COMMUNI… 100  1… NORT… VA           24273 Norto…
+##  6        490001 NORTON COMMUNI… 100  1… NORT… VA           24273 Norto…
+##  7        490001 NORTON COMMUNI… 100  1… NORT… VA           24273 Norto…
+##  8        490001 NORTON COMMUNI… 100  1… NORT… VA           24273 Norto…
+##  9        490001 NORTON COMMUNI… 100  1… NORT… VA           24273 Norto…
+## 10        490001 NORTON COMMUNI… 100  1… NORT… VA           24273 Norto…
+## # … with 619 more rows, and 20 more variables: `Phone Number` &lt;chr&gt;, `Measure
+## #   ID` &lt;chr&gt;, `Measure Name` &lt;chr&gt;, `Compared to National` &lt;chr&gt;,
+## #   Denominator &lt;chr&gt;, Score &lt;chr&gt;, `Lower Estimate` &lt;chr&gt;, `Higher
+## #   Estimate` &lt;chr&gt;, Footnote &lt;dbl&gt;, `Start Date` &lt;dttm&gt;, `End Date` &lt;dttm&gt;,
+## #   State.y &lt;chr&gt;, State_abbr &lt;chr&gt;, Deaths &lt;dbl&gt;, Population &lt;dbl&gt;, `Crude
+## #   Rate` &lt;dbl&gt;, `Crude Rate Lower 95% Confidence Interval` &lt;dbl&gt;, `Crude Rate
+## #   Upper 95% Confidence Interval` &lt;dbl&gt;, `Crude Rate Standard Error` &lt;dbl&gt;, `%
+## #   of Total Deaths` &lt;dbl&gt;</code></pre>
+<pre class="r"><code># there are 629 entries from VA.</code></pre>
+<pre class="r"><code># Select only the state and death rate for each row (Using
+# Select)
+join %&gt;% select(State.x, Deaths)</code></pre>
+<pre><code>## # A tibble: 997 x 2
+##    State.x Deaths
+##    &lt;chr&gt;    &lt;dbl&gt;
+##  1 MD      143566
+##  2 MD      143566
+##  3 MD      143566
+##  4 MD      143566
+##  5 MD      143566
+##  6 MD      143566
+##  7 MD      143566
+##  8 MD      143566
+##  9 MD      143566
+## 10 MD      143566
+## # … with 987 more rows</code></pre>
+<pre class="r"><code># What is the mean death rate by state? (Using group_by,
+# summarize)
+join %&gt;% group_by(State.x) %&gt;% summarize(mean(Deaths))</code></pre>
+<pre><code>## # A tibble: 3 x 2
+##   State.x `mean(Deaths)`
+##   &lt;chr&gt;            &lt;dbl&gt;
+## 1 MD             143566 
+## 2 MO              68755 
+## 3 VA              18537.</code></pre>
+<pre class="r"><code># Which hospitals/states are rated the lowest? (Using
+# arrange)
+join %&gt;% select(&quot;Facility Name&quot;, &quot;State.y&quot;, &quot;Score&quot;) %&gt;% arrange(Score)</code></pre>
+<pre><code>## # A tibble: 997 x 3
+##    `Facility Name`                       State.y  Score
+##    &lt;chr&gt;                                 &lt;chr&gt;    &lt;chr&gt;
+##  1 LEWISGALE MEDICAL CENTER              Virginia 0.06 
+##  2 INOVA ALEXANDRIA HOSPITAL             Virginia 0.08 
+##  3 MERCY MEDICAL CENTER INC              Maryland 0.09 
+##  4 MEDICAL COLLEGE OF VIRGINIA HOSPITALS Virginia 0.09 
+##  5 BARNES JEWISH HOSPITAL                Missouri 0.1  
+##  6 SENTARA RMH MEDICAL CENTER            Virginia 0.1  
+##  7 UNIVERSITY OF VIRGINIA MEDICAL CENTER Virginia 0.1  
+##  8 INOVA ALEXANDRIA HOSPITAL             Virginia 0.1  
+##  9 NOVANT PRINCE WILLIAM MEDICAL CENTER  Virginia 0.1  
+## 10 SENTARA LEIGH HOSPITAL                Virginia 0.1  
+## # … with 987 more rows</code></pre>
+<pre class="r"><code># Which are rated the highest?
+join %&gt;% filter(Score != &quot;Not Available&quot;) %&gt;% select(&quot;Facility Name&quot;, 
+    &quot;State.y&quot;, &quot;Score&quot;) %&gt;% arrange(desc(Score))</code></pre>
+<pre><code>## # A tibble: 711 x 3
+##    `Facility Name`                       State.y  Score             
+##    &lt;chr&gt;                                 &lt;chr&gt;    &lt;chr&gt;             
+##  1 SENTARA CAREPLEX HOSPITAL             Virginia 9.9               
+##  2 BON SECOURS ST MARYS HOSPITAL         Virginia 9.6999999999999993
+##  3 CENTRA                                Virginia 9.6               
+##  4 UNIVERSITY OF VIRGINIA MEDICAL CENTER Virginia 9.5               
+##  5 SALEM VA MEDICAL CENTER               Virginia 9.5               
+##  6 SINAI HOSPITAL OF BALTIMORE           Maryland 9.4               
+##  7 MEDSTAR UNION MEMORIAL HOSPITAL       Maryland 9.3000000000000007
+##  8 SENTARA RMH MEDICAL CENTER            Virginia 9.3000000000000007
+##  9 SENTARA NORFOLK GENERAL HOSPITAL      Virginia 9.1               
+## 10 SENTARA OBICI HOSPITAL                Virginia 9.1               
+## # … with 701 more rows</code></pre>
+<pre class="r"><code># Create a new variable that compares the Death rate to the
+# size of the population. (Using mutate)
+join %&gt;% mutate(Prop_death = (Deaths/Population))</code></pre>
+<pre><code>## # A tibble: 997 x 28
+##    `Facility ID` `Facility Name` Address City  State.x `ZIP Code` County
+##            &lt;dbl&gt; &lt;chr&gt;           &lt;chr&gt;   &lt;chr&gt; &lt;chr&gt;        &lt;dbl&gt; &lt;chr&gt; 
+##  1        210002 UNIVERSITY OF … 22 SOU… BALT… MD           21201 Balti…
+##  2        210002 UNIVERSITY OF … 22 SOU… BALT… MD           21201 Balti…
+##  3        210002 UNIVERSITY OF … 22 SOU… BALT… MD           21201 Balti…
+##  4        210002 UNIVERSITY OF … 22 SOU… BALT… MD           21201 Balti…
+##  5        210002 UNIVERSITY OF … 22 SOU… BALT… MD           21201 Balti…
+##  6        210002 UNIVERSITY OF … 22 SOU… BALT… MD           21201 Balti…
+##  7        210002 UNIVERSITY OF … 22 SOU… BALT… MD           21201 Balti…
+##  8        210002 UNIVERSITY OF … 22 SOU… BALT… MD           21201 Balti…
+##  9        210002 UNIVERSITY OF … 22 SOU… BALT… MD           21201 Balti…
+## 10        210002 UNIVERSITY OF … 22 SOU… BALT… MD           21201 Balti…
+## # … with 987 more rows, and 21 more variables: `Phone Number` &lt;chr&gt;, `Measure
+## #   ID` &lt;chr&gt;, `Measure Name` &lt;chr&gt;, `Compared to National` &lt;chr&gt;,
+## #   Denominator &lt;chr&gt;, Score &lt;chr&gt;, `Lower Estimate` &lt;chr&gt;, `Higher
+## #   Estimate` &lt;chr&gt;, Footnote &lt;dbl&gt;, `Start Date` &lt;dttm&gt;, `End Date` &lt;dttm&gt;,
+## #   State.y &lt;chr&gt;, State_abbr &lt;chr&gt;, Deaths &lt;dbl&gt;, Population &lt;dbl&gt;, `Crude
+## #   Rate` &lt;dbl&gt;, `Crude Rate Lower 95% Confidence Interval` &lt;dbl&gt;, `Crude Rate
+## #   Upper 95% Confidence Interval` &lt;dbl&gt;, `Crude Rate Standard Error` &lt;dbl&gt;, `%
+## #   of Total Deaths` &lt;dbl&gt;, Prop_death &lt;dbl&gt;</code></pre>
+</div>
+<div id="summary-statistics" class="section level2">
+<h2>Summary Statistics</h2>
+<div id="creating-summary-statistics-without-first-grouping-by-a-categorical-variable" class="section level3">
+<h3>Creating summary statistics without first grouping by a categorical variable</h3>
+<pre class="r"><code># mean for each numerical variable
+join %&gt;% select_if(is.numeric) %&gt;% summarize_all(mean)</code></pre>
+<pre><code>## # A tibble: 1 x 10
+##   `Facility ID` `ZIP Code` Footnote Deaths Population `Crude Rate`
+##           &lt;dbl&gt;      &lt;dbl&gt;    &lt;dbl&gt;  &lt;dbl&gt;      &lt;dbl&gt;        &lt;dbl&gt;
+## 1            NA     26636.       NA 57558.   5328203.        1067.
+## # … with 4 more variables: `Crude Rate Lower 95% Confidence Interval` &lt;dbl&gt;,
+## #   `Crude Rate Upper 95% Confidence Interval` &lt;dbl&gt;, `Crude Rate Standard
+## #   Error` &lt;dbl&gt;, `% of Total Deaths` &lt;dbl&gt;</code></pre>
+<pre class="r"><code># standard deviation for each numerical variable
+join %&gt;% select_if(is.numeric) %&gt;% summarize_all(sd)</code></pre>
+<pre><code>## # A tibble: 1 x 10
+##   `Facility ID` `ZIP Code` Footnote Deaths Population `Crude Rate`
+##           &lt;dbl&gt;      &lt;dbl&gt;    &lt;dbl&gt;  &lt;dbl&gt;      &lt;dbl&gt;        &lt;dbl&gt;
+## 1            NA     11902.       NA 56007.   4782986.         250.
+## # … with 4 more variables: `Crude Rate Lower 95% Confidence Interval` &lt;dbl&gt;,
+## #   `Crude Rate Upper 95% Confidence Interval` &lt;dbl&gt;, `Crude Rate Standard
+## #   Error` &lt;dbl&gt;, `% of Total Deaths` &lt;dbl&gt;</code></pre>
+<pre class="r"><code># how many observations in the dataset?
+
+### looking at the whole dataset:
+join %&gt;% summarize(n())</code></pre>
+<pre><code>## # A tibble: 1 x 1
+##   `n()`
+##   &lt;int&gt;
+## 1   997</code></pre>
+<pre class="r"><code>### looking at only the numeric variables:
+join %&gt;% select_if(is.numeric) %&gt;% summarize(n())</code></pre>
+<pre><code>## # A tibble: 1 x 1
+##   `n()`
+##   &lt;int&gt;
+## 1   997</code></pre>
+<pre class="r"><code>### looking at one numerical variable, Facility ID:
+join %&gt;% summarize(`Facility ID`, n())</code></pre>
+<pre><code>## # A tibble: 997 x 2
+##    `Facility ID` `n()`
+##            &lt;dbl&gt; &lt;int&gt;
+##  1        210002   997
+##  2        210002   997
+##  3        210002   997
+##  4        210002   997
+##  5        210002   997
+##  6        210002   997
+##  7        210002   997
+##  8        210002   997
+##  9        210002   997
+## 10        210002   997
+## # … with 987 more rows</code></pre>
+<pre class="r"><code># quantiles for each numerical variable (had to omit NAs)
+join %&gt;% na.omit() %&gt;% select_if(is.numeric) %&gt;% summarize_all(quantile)</code></pre>
+<pre><code>## # A tibble: 5 x 10
+##   `Facility ID` `ZIP Code` Footnote Deaths Population `Crude Rate`
+##           &lt;dbl&gt;      &lt;dbl&gt;    &lt;dbl&gt;  &lt;dbl&gt;      &lt;dbl&gt;        &lt;dbl&gt;
+## 1        210008      20110        1    905     78571          528.
+## 2        213301      21223        5  13918   1243698.         978.
+## 3        490001      23507       19  40475   4839512         1062.
+## 4        490104      24450       19 143566  12497715         1149.
+## 5        493302      63118       19 143566  12497715         1724.
+## # … with 4 more variables: `Crude Rate Lower 95% Confidence Interval` &lt;dbl&gt;,
+## #   `Crude Rate Upper 95% Confidence Interval` &lt;dbl&gt;, `Crude Rate Standard
+## #   Error` &lt;dbl&gt;, `% of Total Deaths` &lt;dbl&gt;</code></pre>
+<pre class="r"><code># min for each numerical variable
+join %&gt;% select_if(is.numeric) %&gt;% summarize_all(min)</code></pre>
+<pre><code>## # A tibble: 1 x 10
+##   `Facility ID` `ZIP Code` Footnote Deaths Population `Crude Rate`
+##           &lt;dbl&gt;      &lt;dbl&gt;    &lt;dbl&gt;  &lt;dbl&gt;      &lt;dbl&gt;        &lt;dbl&gt;
+## 1            NA      20110       NA    905      78571         528.
+## # … with 4 more variables: `Crude Rate Lower 95% Confidence Interval` &lt;dbl&gt;,
+## #   `Crude Rate Upper 95% Confidence Interval` &lt;dbl&gt;, `Crude Rate Standard
+## #   Error` &lt;dbl&gt;, `% of Total Deaths` &lt;dbl&gt;</code></pre>
+<pre class="r"><code># max for each numerical variable
+join %&gt;% select_if(is.numeric) %&gt;% summarize_all(max)</code></pre>
+<pre><code>## # A tibble: 1 x 10
+##   `Facility ID` `ZIP Code` Footnote Deaths Population `Crude Rate`
+##           &lt;dbl&gt;      &lt;dbl&gt;    &lt;dbl&gt;  &lt;dbl&gt;      &lt;dbl&gt;        &lt;dbl&gt;
+## 1            NA      63118       NA 143566   12497715        1724.
+## # … with 4 more variables: `Crude Rate Lower 95% Confidence Interval` &lt;dbl&gt;,
+## #   `Crude Rate Upper 95% Confidence Interval` &lt;dbl&gt;, `Crude Rate Standard
+## #   Error` &lt;dbl&gt;, `% of Total Deaths` &lt;dbl&gt;</code></pre>
+<pre class="r"><code># correlation for each numeric variable (for plots)
+joincor &lt;- join %&gt;% na.omit() %&gt;% select_if(is.numeric) %&gt;% cor()
+# looks like there is a strong correlation between the size
+# of the population and the death rate, which makes sense;
+# the more people in an area, the more people in that area
+# will die.</code></pre>
+</div>
+<div id="creating-summary-statistics-by-first-grouping-by-a-categorical-variable" class="section level3">
+<h3>Creating summary statistics by first grouping by a categorical variable</h3>
+<pre class="r"><code># mean for each numerical variable
+join %&gt;% group_by(State.y) %&gt;% select_if(is.numeric) %&gt;% summarize_all(mean)</code></pre>
+<pre><code>## # A tibble: 3 x 11
+##   State.y `Facility ID` `ZIP Code` Footnote Deaths Population `Crude Rate`
+##   &lt;chr&gt;           &lt;dbl&gt;      &lt;dbl&gt;    &lt;dbl&gt;  &lt;dbl&gt;      &lt;dbl&gt;        &lt;dbl&gt;
+## 1 Maryla…           NA      21220        NA 1.44e5  12497715         1149.
+## 2 Missou…       261390.     63112.       NA 6.88e4   6475681         1062.
+## 3 Virgin…           NA      23478.       NA 1.85e4   2043168.        1032.
+## # … with 4 more variables: `Crude Rate Lower 95% Confidence Interval` &lt;dbl&gt;,
+## #   `Crude Rate Upper 95% Confidence Interval` &lt;dbl&gt;, `Crude Rate Standard
+## #   Error` &lt;dbl&gt;, `% of Total Deaths` &lt;dbl&gt;</code></pre>
+<pre class="r"><code># standard deviation for each numerical variable
+join %&gt;% group_by(State.y) %&gt;% select_if(is.numeric) %&gt;% summarize_all(sd)</code></pre>
+<pre><code>## # A tibble: 3 x 11
+##   State.y `Facility ID` `ZIP Code` Footnote Deaths Population `Crude Rate`
+##   &lt;chr&gt;           &lt;dbl&gt;      &lt;dbl&gt;    &lt;dbl&gt;  &lt;dbl&gt;      &lt;dbl&gt;        &lt;dbl&gt;
+## 1 Maryla…           NA       21.6        NA     0          0            0 
+## 2 Missou…         1571.       3.22       NA     0          0            0 
+## 3 Virgin…           NA      815.         NA 14666.   1711621.         309.
+## # … with 4 more variables: `Crude Rate Lower 95% Confidence Interval` &lt;dbl&gt;,
+## #   `Crude Rate Upper 95% Confidence Interval` &lt;dbl&gt;, `Crude Rate Standard
+## #   Error` &lt;dbl&gt;, `% of Total Deaths` &lt;dbl&gt;</code></pre>
+<pre class="r"><code># how many observations in the dataset? looking at only the
+# numeric variables and grouping by state:
+join %&gt;% group_by(State.y) %&gt;% select_if(is.numeric) %&gt;% summarize(n())</code></pre>
+<pre><code>## # A tibble: 3 x 2
+##   State.y  `n()`
+##   &lt;chr&gt;    &lt;int&gt;
+## 1 Maryland   273
+## 2 Missouri    95
+## 3 Virginia   629</code></pre>
+<pre class="r"><code># quantiles for each numerical variable (had to omit NAs)
+join %&gt;% group_by(State.y) %&gt;% na.omit() %&gt;% select_if(is.numeric) %&gt;% 
+    summarize_all(quantile)</code></pre>
+<pre><code>## # A tibble: 15 x 11
+## # Groups:   State.y [3]
+##    State.y `Facility ID` `ZIP Code` Footnote Deaths Population `Crude Rate`
+##    &lt;chr&gt;           &lt;dbl&gt;      &lt;dbl&gt;    &lt;dbl&gt;  &lt;dbl&gt;      &lt;dbl&gt;        &lt;dbl&gt;
+##  1 Maryla…        210008     21201         1 143566  12497715         1149.
+##  2 Maryla…        210060     21205         5 143566  12497715         1149.
+##  3 Maryla…        213300     21209        19 143566  12497715         1149.
+##  4 Maryla…        213301     21209        19 143566  12497715         1149.
+##  5 Maryla…        213301     21287        19 143566  12497715         1149.
+##  6 Missou…        260105     63110         1  68755   6475681         1062.
+##  7 Missou…        263301     63110        19  68755   6475681         1062.
+##  8 Missou…        263301     63110        19  68755   6475681         1062.
+##  9 Missou…        263304     63110        19  68755   6475681         1062.
+## 10 Missou…        263304     63118        19  68755   6475681         1062.
+## 11 Virgin…        490001     20110         1    905     78571          528.
+## 12 Virgin…        490094     23223         1   2360    139985          978.
+## 13 Virgin…        490104     23586.       13  13918   1243698.         978.
+## 14 Virgin…        493301     23847        19  40475   4139720         1436.
+## 15 Virgin…        493302     24541        19  40475   4839512         1724.
+## # … with 4 more variables: `Crude Rate Lower 95% Confidence Interval` &lt;dbl&gt;,
+## #   `Crude Rate Upper 95% Confidence Interval` &lt;dbl&gt;, `Crude Rate Standard
+## #   Error` &lt;dbl&gt;, `% of Total Deaths` &lt;dbl&gt;</code></pre>
+<pre class="r"><code># min for each numerical variable
+join %&gt;% group_by(State.y) %&gt;% select_if(is.numeric) %&gt;% summarize_all(min)</code></pre>
+<pre><code>## # A tibble: 3 x 11
+##   State.y `Facility ID` `ZIP Code` Footnote Deaths Population `Crude Rate`
+##   &lt;chr&gt;           &lt;dbl&gt;      &lt;dbl&gt;    &lt;dbl&gt;  &lt;dbl&gt;      &lt;dbl&gt;        &lt;dbl&gt;
+## 1 Maryla…            NA      21201       NA 143566   12497715        1149.
+## 2 Missou…        260032      63110       NA  68755    6475681        1062.
+## 3 Virgin…            NA      20110       NA    905      78571         528.
+## # … with 4 more variables: `Crude Rate Lower 95% Confidence Interval` &lt;dbl&gt;,
+## #   `Crude Rate Upper 95% Confidence Interval` &lt;dbl&gt;, `Crude Rate Standard
+## #   Error` &lt;dbl&gt;, `% of Total Deaths` &lt;dbl&gt;</code></pre>
+<pre class="r"><code># max for each numerical variable
+join %&gt;% group_by(State.y) %&gt;% select_if(is.numeric) %&gt;% summarize_all(max)</code></pre>
+<pre><code>## # A tibble: 3 x 11
+##   State.y `Facility ID` `ZIP Code` Footnote Deaths Population `Crude Rate`
+##   &lt;chr&gt;           &lt;dbl&gt;      &lt;dbl&gt;    &lt;dbl&gt;  &lt;dbl&gt;      &lt;dbl&gt;        &lt;dbl&gt;
+## 1 Maryla…            NA      21287       NA 143566   12497715        1149.
+## 2 Missou…        263304      63118       NA  68755    6475681        1062.
+## 3 Virgin…            NA      24541       NA  40475    4839512        1724.
+## # … with 4 more variables: `Crude Rate Lower 95% Confidence Interval` &lt;dbl&gt;,
+## #   `Crude Rate Upper 95% Confidence Interval` &lt;dbl&gt;, `Crude Rate Standard
+## #   Error` &lt;dbl&gt;, `% of Total Deaths` &lt;dbl&gt;</code></pre>
+</div>
+<div id="grouping-by-two-categorical-variables-simultaneously-how-many-observations-for-each-variable-are-there-in-each-group-if-we-group-by-facility-id-and-county" class="section level3">
+<h3>Grouping by two categorical variables simultaneously: How many observations for each variable are there in each group if we group by <code>Facility ID</code> and <code>County</code>?</h3>
+<pre class="r"><code>join %&gt;% group_by(`Facility ID`, County) %&gt;% summarise_all(n_distinct)</code></pre>
+<pre><code>## # A tibble: 54 x 27
+## # Groups:   Facility ID [50]
+##    `Facility ID` County `Facility Name` Address  City State.x `ZIP Code`
+##            &lt;dbl&gt; &lt;chr&gt;            &lt;int&gt;   &lt;int&gt; &lt;int&gt;   &lt;int&gt;      &lt;int&gt;
+##  1        210002 Balti…               1       1     1       1          1
+##  2        210008 Balti…               1       1     1       1          1
+##  3        210009 Balti…               1       1     1       1          1
+##  4        210011 Balti…               1       1     1       1          1
+##  5        210012 Balti…               1       1     1       1          1
+##  6        210013 Balti…               1       1     1       1          1
+##  7        210024 Balti…               1       1     1       1          1
+##  8        210029 Balti…               1       1     1       1          1
+##  9        210034 Balti…               1       1     1       1          1
+## 10        210038 Balti…               1       1     1       1          1
+## # … with 44 more rows, and 20 more variables: `Phone Number` &lt;int&gt;, `Measure
+## #   ID` &lt;int&gt;, `Measure Name` &lt;int&gt;, `Compared to National` &lt;int&gt;,
+## #   Denominator &lt;int&gt;, Score &lt;int&gt;, `Lower Estimate` &lt;int&gt;, `Higher
+## #   Estimate` &lt;int&gt;, Footnote &lt;int&gt;, `Start Date` &lt;int&gt;, `End Date` &lt;int&gt;,
+## #   State.y &lt;int&gt;, State_abbr &lt;int&gt;, Deaths &lt;int&gt;, Population &lt;int&gt;, `Crude
+## #   Rate` &lt;int&gt;, `Crude Rate Lower 95% Confidence Interval` &lt;int&gt;, `Crude Rate
+## #   Upper 95% Confidence Interval` &lt;int&gt;, `Crude Rate Standard Error` &lt;int&gt;, `%
+## #   of Total Deaths` &lt;int&gt;</code></pre>
+</div>
+</div>
+<div id="summmary-statistics-tables" class="section level1">
+<h1>Summmary Statistics: Tables</h1>
+<pre class="r"><code>library(kableExtra)
+# Average of each numerical variable, by State
+join %&gt;% group_by(State.y) %&gt;% select_if(is.numeric) %&gt;% summarize_all(mean) %&gt;% 
+    kbl(caption = &quot;Average of each numerical variable by State&quot;) %&gt;% 
+    kable_classic(full_width = F, html_font = &quot;Cambria&quot;)</code></pre>
+<table class=" lightable-classic" style="font-family: Cambria; width: auto !important; margin-left: auto; margin-right: auto;">
+<caption>
+<span id="tab:unnamed-chunk-11">Table 1: </span>Average of each numerical variable by State
+</caption>
+<thead>
+<tr>
+<th style="text-align:left;">
+State.y
+</th>
+<th style="text-align:right;">
+Facility ID
+</th>
+<th style="text-align:right;">
+ZIP Code
+</th>
+<th style="text-align:right;">
+Footnote
+</th>
+<th style="text-align:right;">
+Deaths
+</th>
+<th style="text-align:right;">
+Population
+</th>
+<th style="text-align:right;">
+Crude Rate
+</th>
+<th style="text-align:right;">
+Crude Rate Lower 95% Confidence Interval
+</th>
+<th style="text-align:right;">
+Crude Rate Upper 95% Confidence Interval
+</th>
+<th style="text-align:right;">
+Crude Rate Standard Error
+</th>
+<th style="text-align:right;">
+% of Total Deaths
+</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td style="text-align:left;">
+Maryland
+</td>
+<td style="text-align:right;">
+NA
+</td>
+<td style="text-align:right;">
+21220.00
+</td>
+<td style="text-align:right;">
+NA
+</td>
+<td style="text-align:right;">
+143566.00
+</td>
+<td style="text-align:right;">
+12497715
+</td>
+<td style="text-align:right;">
+1148.700
+</td>
+<td style="text-align:right;">
+1142.800
+</td>
+<td style="text-align:right;">
+1154.700
+</td>
+<td style="text-align:right;">
+3.00000
+</td>
+<td style="text-align:right;">
+0.003000
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+Missouri
+</td>
+<td style="text-align:right;">
+261390.4
+</td>
+<td style="text-align:right;">
+63111.60
+</td>
+<td style="text-align:right;">
+NA
+</td>
+<td style="text-align:right;">
+68755.00
+</td>
+<td style="text-align:right;">
+6475681
+</td>
+<td style="text-align:right;">
+1061.700
+</td>
+<td style="text-align:right;">
+1053.800
+</td>
+<td style="text-align:right;">
+1069.700
+</td>
+<td style="text-align:right;">
+4.00000
+</td>
+<td style="text-align:right;">
+0.001000
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+Virginia
+</td>
+<td style="text-align:right;">
+NA
+</td>
+<td style="text-align:right;">
+23477.61
+</td>
+<td style="text-align:right;">
+NA
+</td>
+<td style="text-align:right;">
+18537.26
+</td>
+<td style="text-align:right;">
+2043168
+</td>
+<td style="text-align:right;">
+1031.849
+</td>
+<td style="text-align:right;">
+1008.194
+</td>
+<td style="text-align:right;">
+1055.488
+</td>
+<td style="text-align:right;">
+12.06614
+</td>
+<td style="text-align:right;">
+0.000283
+</td>
+</tr>
+</tbody>
+</table>
+<pre class="r"><code># Minimum value present in dataset, by state
+join %&gt;% group_by(State.y) %&gt;% select_if(is.numeric) %&gt;% select(-`ZIP Code`, 
+    -Footnote, -`Facility ID`) %&gt;% summarize_all(min) %&gt;% kbl(caption = &quot;Minimum Values, by State&quot;) %&gt;% 
+    kable_classic(full_width = F, html_font = &quot;Cambria&quot;)</code></pre>
+<table class=" lightable-classic" style="font-family: Cambria; width: auto !important; margin-left: auto; margin-right: auto;">
+<caption>
+<span id="tab:unnamed-chunk-11">Table 1: </span>Minimum Values, by State
+</caption>
+<thead>
+<tr>
+<th style="text-align:left;">
+State.y
+</th>
+<th style="text-align:right;">
+Deaths
+</th>
+<th style="text-align:right;">
+Population
+</th>
+<th style="text-align:right;">
+Crude Rate
+</th>
+<th style="text-align:right;">
+Crude Rate Lower 95% Confidence Interval
+</th>
+<th style="text-align:right;">
+Crude Rate Upper 95% Confidence Interval
+</th>
+<th style="text-align:right;">
+Crude Rate Standard Error
+</th>
+<th style="text-align:right;">
+% of Total Deaths
+</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td style="text-align:left;">
+Maryland
+</td>
+<td style="text-align:right;">
+143566
+</td>
+<td style="text-align:right;">
+12497715
+</td>
+<td style="text-align:right;">
+1148.7
+</td>
+<td style="text-align:right;">
+1142.8
+</td>
+<td style="text-align:right;">
+1154.7
+</td>
+<td style="text-align:right;">
+3
+</td>
+<td style="text-align:right;">
+0.003
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+Missouri
+</td>
+<td style="text-align:right;">
+68755
+</td>
+<td style="text-align:right;">
+6475681
+</td>
+<td style="text-align:right;">
+1061.7
+</td>
+<td style="text-align:right;">
+1053.8
+</td>
+<td style="text-align:right;">
+1069.7
+</td>
+<td style="text-align:right;">
+4
+</td>
+<td style="text-align:right;">
+0.001
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+Virginia
+</td>
+<td style="text-align:right;">
+905
+</td>
+<td style="text-align:right;">
+78571
+</td>
+<td style="text-align:right;">
+527.9
+</td>
+<td style="text-align:right;">
+511.5
+</td>
+<td style="text-align:right;">
+544.2
+</td>
+<td style="text-align:right;">
+4
+</td>
+<td style="text-align:right;">
+0.000
+</td>
+</tr>
+</tbody>
+</table>
+<pre class="r"><code># Averaged Crude Rate Statistics, by State
+join %&gt;% group_by(State.y) %&gt;% select(`Crude Rate`, `Crude Rate Lower 95% Confidence Interval`, 
+    `Crude Rate Upper 95% Confidence Interval`, `Crude Rate Standard Error`) %&gt;% 
+    summarize_all(mean) %&gt;% kbl(caption = &quot;Average Crude Rate Statistics, by State&quot;) %&gt;% 
+    kable_classic(full_width = F, html_font = &quot;Cambria&quot;)</code></pre>
+<table class=" lightable-classic" style="font-family: Cambria; width: auto !important; margin-left: auto; margin-right: auto;">
+<caption>
+<span id="tab:unnamed-chunk-11">Table 1: </span>Average Crude Rate Statistics, by State
+</caption>
+<thead>
+<tr>
+<th style="text-align:left;">
+State.y
+</th>
+<th style="text-align:right;">
+Crude Rate
+</th>
+<th style="text-align:right;">
+Crude Rate Lower 95% Confidence Interval
+</th>
+<th style="text-align:right;">
+Crude Rate Upper 95% Confidence Interval
+</th>
+<th style="text-align:right;">
+Crude Rate Standard Error
+</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td style="text-align:left;">
+Maryland
+</td>
+<td style="text-align:right;">
+1148.700
+</td>
+<td style="text-align:right;">
+1142.800
+</td>
+<td style="text-align:right;">
+1154.700
+</td>
+<td style="text-align:right;">
+3.00000
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+Missouri
+</td>
+<td style="text-align:right;">
+1061.700
+</td>
+<td style="text-align:right;">
+1053.800
+</td>
+<td style="text-align:right;">
+1069.700
+</td>
+<td style="text-align:right;">
+4.00000
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+Virginia
+</td>
+<td style="text-align:right;">
+1031.849
+</td>
+<td style="text-align:right;">
+1008.194
+</td>
+<td style="text-align:right;">
+1055.488
+</td>
+<td style="text-align:right;">
+12.06614
+</td>
+</tr>
+</tbody>
+</table>
+<pre class="r"><code># Average deaths by County
+join %&gt;% group_by(County) %&gt;% summarize(mean(Deaths)) %&gt;% kbl(caption = &quot;Average Death Rate by County&quot;) %&gt;% 
+    kable_classic(full_width = F, html_font = &quot;Cambria&quot;)</code></pre>
+<table class=" lightable-classic" style="font-family: Cambria; width: auto !important; margin-left: auto; margin-right: auto;">
+<caption>
+<span id="tab:unnamed-chunk-11">Table 1: </span>Average Death Rate by County
+</caption>
+<thead>
+<tr>
+<th style="text-align:left;">
+County
+</th>
+<th style="text-align:right;">
+mean(Deaths)
+</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td style="text-align:left;">
+Alexandria city
+</td>
+<td style="text-align:right;">
+14994
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+Baltimore city
+</td>
+<td style="text-align:right;">
+143566
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+Charlottesville city
+</td>
+<td style="text-align:right;">
+5909
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+Chesapeake city
+</td>
+<td style="text-align:right;">
+31063
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+Danville city
+</td>
+<td style="text-align:right;">
+14055
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+Emporia city
+</td>
+<td style="text-align:right;">
+1724
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+Franklin city
+</td>
+<td style="text-align:right;">
+2657
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+Fredericksburg city
+</td>
+<td style="text-align:right;">
+3948
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+Galax city
+</td>
+<td style="text-align:right;">
+2360
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+Hampton city
+</td>
+<td style="text-align:right;">
+23393
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+Harrisonburg city
+</td>
+<td style="text-align:right;">
+5378
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+Hopewell city
+</td>
+<td style="text-align:right;">
+5638
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+Lexington city
+</td>
+<td style="text-align:right;">
+1412
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+Lynchburg city
+</td>
+<td style="text-align:right;">
+15625
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+Manassas city
+</td>
+<td style="text-align:right;">
+4013
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+Norfolk city
+</td>
+<td style="text-align:right;">
+39771
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+Norton city
+</td>
+<td style="text-align:right;">
+905
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+Petersburg city
+</td>
+<td style="text-align:right;">
+9322
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+Portsmouth city
+</td>
+<td style="text-align:right;">
+21240
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+Richmond city
+</td>
+<td style="text-align:right;">
+40475
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+Roanoke city
+</td>
+<td style="text-align:right;">
+24161
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+Salem city
+</td>
+<td style="text-align:right;">
+6147
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+St. Louis city
+</td>
+<td style="text-align:right;">
+68755
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+Suffolk city
+</td>
+<td style="text-align:right;">
+13781
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+Winchester city
+</td>
+<td style="text-align:right;">
+5222
+</td>
+</tr>
+</tbody>
+</table>
+<pre class="r"><code># Averages for each numerical variable for hospitals in
+# Missouri
+join %&gt;% filter(State.y == &quot;Missouri&quot;) %&gt;% group_by(`Facility Name`) %&gt;% 
+    summarize_if(is.numeric, mean) %&gt;% kbl(caption = &quot;Averages for hospitals in Missouri&quot;) %&gt;% 
+    kable_classic(full_width = F, html_font = &quot;Cambria&quot;)</code></pre>
+<table class=" lightable-classic" style="font-family: Cambria; width: auto !important; margin-left: auto; margin-right: auto;">
+<caption>
+<span id="tab:unnamed-chunk-11">Table 1: </span>Averages for hospitals in Missouri
+</caption>
+<thead>
+<tr>
+<th style="text-align:left;">
+Facility Name
+</th>
+<th style="text-align:right;">
+Facility ID
+</th>
+<th style="text-align:right;">
+ZIP Code
+</th>
+<th style="text-align:right;">
+Footnote
+</th>
+<th style="text-align:right;">
+Deaths
+</th>
+<th style="text-align:right;">
+Population
+</th>
+<th style="text-align:right;">
+Crude Rate
+</th>
+<th style="text-align:right;">
+Crude Rate Lower 95% Confidence Interval
+</th>
+<th style="text-align:right;">
+Crude Rate Upper 95% Confidence Interval
+</th>
+<th style="text-align:right;">
+Crude Rate Standard Error
+</th>
+<th style="text-align:right;">
+% of Total Deaths
+</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td style="text-align:left;">
+BARNES JEWISH HOSPITAL
+</td>
+<td style="text-align:right;">
+260032
+</td>
+<td style="text-align:right;">
+63110
+</td>
+<td style="text-align:right;">
+NA
+</td>
+<td style="text-align:right;">
+68755
+</td>
+<td style="text-align:right;">
+6475681
+</td>
+<td style="text-align:right;">
+1061.7
+</td>
+<td style="text-align:right;">
+1053.8
+</td>
+<td style="text-align:right;">
+1069.7
+</td>
+<td style="text-align:right;">
+4
+</td>
+<td style="text-align:right;">
+0.001
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+SHRINER HOSPITAL FOR CHILDREN
+</td>
+<td style="text-align:right;">
+263304
+</td>
+<td style="text-align:right;">
+63110
+</td>
+<td style="text-align:right;">
+19
+</td>
+<td style="text-align:right;">
+68755
+</td>
+<td style="text-align:right;">
+6475681
+</td>
+<td style="text-align:right;">
+1061.7
+</td>
+<td style="text-align:right;">
+1053.8
+</td>
+<td style="text-align:right;">
+1069.7
+</td>
+<td style="text-align:right;">
+4
+</td>
+<td style="text-align:right;">
+0.001
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+ST ALEXIUS HOSPITAL
+</td>
+<td style="text-align:right;">
+260210
+</td>
+<td style="text-align:right;">
+63118
+</td>
+<td style="text-align:right;">
+NA
+</td>
+<td style="text-align:right;">
+68755
+</td>
+<td style="text-align:right;">
+6475681
+</td>
+<td style="text-align:right;">
+1061.7
+</td>
+<td style="text-align:right;">
+1053.8
+</td>
+<td style="text-align:right;">
+1069.7
+</td>
+<td style="text-align:right;">
+4
+</td>
+<td style="text-align:right;">
+0.001
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+ST LOUIS CHILDRENS HOSPITAL
+</td>
+<td style="text-align:right;">
+263301
+</td>
+<td style="text-align:right;">
+63110
+</td>
+<td style="text-align:right;">
+19
+</td>
+<td style="text-align:right;">
+68755
+</td>
+<td style="text-align:right;">
+6475681
+</td>
+<td style="text-align:right;">
+1061.7
+</td>
+<td style="text-align:right;">
+1053.8
+</td>
+<td style="text-align:right;">
+1069.7
+</td>
+<td style="text-align:right;">
+4
+</td>
+<td style="text-align:right;">
+0.001
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+ST LOUIS UNIVERSITY HOSPITAL
+</td>
+<td style="text-align:right;">
+260105
+</td>
+<td style="text-align:right;">
+63110
+</td>
+<td style="text-align:right;">
+NA
+</td>
+<td style="text-align:right;">
+68755
+</td>
+<td style="text-align:right;">
+6475681
+</td>
+<td style="text-align:right;">
+1061.7
+</td>
+<td style="text-align:right;">
+1053.8
+</td>
+<td style="text-align:right;">
+1069.7
+</td>
+<td style="text-align:right;">
+4
+</td>
+<td style="text-align:right;">
+0.001
+</td>
+</tr>
+</tbody>
+</table>
+<pre class="r"><code># standard deviation for Virginia&#39;s numerical data I removed
+# the sd for zip code because that isn&#39;t really
+# important/informational to run summary statistics on.
+join %&gt;% filter(State.y == &quot;Virginia&quot;) %&gt;% select(Deaths, Population, 
+    `Crude Rate`, `Crude Rate Lower 95% Confidence Interval`, 
+    `Crude Rate Upper 95% Confidence Interval`, `Crude Rate Standard Error`, 
+    `% of Total Deaths`) %&gt;% summarize_if(is.numeric, sd) %&gt;% 
+    kbl(caption = &quot;Standard Deviation for Data from the State of Virginia&quot;) %&gt;% 
+    kable_classic(full_width = F, html_font = &quot;Cambria&quot;)</code></pre>
+<table class=" lightable-classic" style="font-family: Cambria; width: auto !important; margin-left: auto; margin-right: auto;">
+<caption>
+<span id="tab:unnamed-chunk-11">Table 1: </span>Standard Deviation for Data from the State of Virginia
+</caption>
+<thead>
+<tr>
+<th style="text-align:right;">
+Deaths
+</th>
+<th style="text-align:right;">
+Population
+</th>
+<th style="text-align:right;">
+Crude Rate
+</th>
+<th style="text-align:right;">
+Crude Rate Lower 95% Confidence Interval
+</th>
+<th style="text-align:right;">
+Crude Rate Upper 95% Confidence Interval
+</th>
+<th style="text-align:right;">
+Crude Rate Standard Error
+</th>
+<th style="text-align:right;">
+% of Total Deaths
+</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td style="text-align:right;">
+14666.02
+</td>
+<td style="text-align:right;">
+1711621
+</td>
+<td style="text-align:right;">
+308.6526
+</td>
+<td style="text-align:right;">
+295.8273
+</td>
+<td style="text-align:right;">
+322.1597
+</td>
+<td style="text-align:right;">
+10.0203
+</td>
+<td style="text-align:right;">
+0.0004508
+</td>
+</tr>
+</tbody>
+</table>
+<pre class="r"><code># how many observations are in the dataset for each county?
+join %&gt;% group_by(County) %&gt;% summarize(County, n()) %&gt;% summarize_all(mean) %&gt;% 
+    kbl(caption = &quot;Number of Observations by County&quot;) %&gt;% kable_classic(full_width = F, 
+    html_font = &quot;Cambria&quot;)</code></pre>
+<table class=" lightable-classic" style="font-family: Cambria; width: auto !important; margin-left: auto; margin-right: auto;">
+<caption>
+<span id="tab:unnamed-chunk-11">Table 1: </span>Number of Observations by County
+</caption>
+<thead>
+<tr>
+<th style="text-align:left;">
+County
+</th>
+<th style="text-align:right;">
+n()
+</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td style="text-align:left;">
+Alexandria city
+</td>
+<td style="text-align:right;">
+19
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+Baltimore city
+</td>
+<td style="text-align:right;">
+273
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+Charlottesville city
+</td>
+<td style="text-align:right;">
+19
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+Chesapeake city
+</td>
+<td style="text-align:right;">
+19
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+Danville city
+</td>
+<td style="text-align:right;">
+19
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+Emporia city
+</td>
+<td style="text-align:right;">
+19
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+Franklin city
+</td>
+<td style="text-align:right;">
+19
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+Fredericksburg city
+</td>
+<td style="text-align:right;">
+19
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+Galax city
+</td>
+<td style="text-align:right;">
+19
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+Hampton city
+</td>
+<td style="text-align:right;">
+45
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+Harrisonburg city
+</td>
+<td style="text-align:right;">
+19
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+Hopewell city
+</td>
+<td style="text-align:right;">
+19
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+Lexington city
+</td>
+<td style="text-align:right;">
+19
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+Lynchburg city
+</td>
+<td style="text-align:right;">
+19
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+Manassas city
+</td>
+<td style="text-align:right;">
+19
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+Norfolk city
+</td>
+<td style="text-align:right;">
+76
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+Norton city
+</td>
+<td style="text-align:right;">
+19
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+Petersburg city
+</td>
+<td style="text-align:right;">
+38
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+Portsmouth city
+</td>
+<td style="text-align:right;">
+38
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+Richmond city
+</td>
+<td style="text-align:right;">
+83
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+Roanoke city
+</td>
+<td style="text-align:right;">
+19
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+Salem city
+</td>
+<td style="text-align:right;">
+26
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+St. Louis city
+</td>
+<td style="text-align:right;">
+95
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+Suffolk city
+</td>
+<td style="text-align:right;">
+19
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+Winchester city
+</td>
+<td style="text-align:right;">
+19
+</td>
+</tr>
+</tbody>
+</table>
+<pre class="r"><code># quantiles for each numerical variable (had to omit NAs)
+join %&gt;% filter(State.y == &quot;Virginia&quot;) %&gt;% na.omit() %&gt;% select_if(is.numeric) %&gt;% 
+    summarize_all(quantile) %&gt;% kbl(caption = &quot;Quantiles for Data from Virginia&quot;) %&gt;% 
+    kable_classic(full_width = F, html_font = &quot;Cambria&quot;)</code></pre>
+<table class=" lightable-classic" style="font-family: Cambria; width: auto !important; margin-left: auto; margin-right: auto;">
+<caption>
+<span id="tab:unnamed-chunk-11">Table 1: </span>Quantiles for Data from Virginia
+</caption>
+<thead>
+<tr>
+<th style="text-align:right;">
+Facility ID
+</th>
+<th style="text-align:right;">
+ZIP Code
+</th>
+<th style="text-align:right;">
+Footnote
+</th>
+<th style="text-align:right;">
+Deaths
+</th>
+<th style="text-align:right;">
+Population
+</th>
+<th style="text-align:right;">
+Crude Rate
+</th>
+<th style="text-align:right;">
+Crude Rate Lower 95% Confidence Interval
+</th>
+<th style="text-align:right;">
+Crude Rate Upper 95% Confidence Interval
+</th>
+<th style="text-align:right;">
+Crude Rate Standard Error
+</th>
+<th style="text-align:right;">
+% of Total Deaths
+</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td style="text-align:right;">
+490001
+</td>
+<td style="text-align:right;">
+20110.0
+</td>
+<td style="text-align:right;">
+1
+</td>
+<td style="text-align:right;">
+905
+</td>
+<td style="text-align:right;">
+78571
+</td>
+<td style="text-align:right;">
+527.9
+</td>
+<td style="text-align:right;">
+511.5
+</td>
+<td style="text-align:right;">
+544.2
+</td>
+<td style="text-align:right;">
+4.0
+</td>
+<td style="text-align:right;">
+0.000
+</td>
+</tr>
+<tr>
+<td style="text-align:right;">
+490094
+</td>
+<td style="text-align:right;">
+23223.0
+</td>
+<td style="text-align:right;">
+1
+</td>
+<td style="text-align:right;">
+2360
+</td>
+<td style="text-align:right;">
+139985
+</td>
+<td style="text-align:right;">
+977.7
+</td>
+<td style="text-align:right;">
+956.1
+</td>
+<td style="text-align:right;">
+987.2
+</td>
+<td style="text-align:right;">
+4.9
+</td>
+<td style="text-align:right;">
+0.000
+</td>
+</tr>
+<tr>
+<td style="text-align:right;">
+490104
+</td>
+<td style="text-align:right;">
+23586.5
+</td>
+<td style="text-align:right;">
+13
+</td>
+<td style="text-align:right;">
+13918
+</td>
+<td style="text-align:right;">
+1243698
+</td>
+<td style="text-align:right;">
+977.7
+</td>
+<td style="text-align:right;">
+968.2
+</td>
+<td style="text-align:right;">
+987.2
+</td>
+<td style="text-align:right;">
+7.8
+</td>
+<td style="text-align:right;">
+0.000
+</td>
+</tr>
+<tr>
+<td style="text-align:right;">
+493301
+</td>
+<td style="text-align:right;">
+23847.0
+</td>
+<td style="text-align:right;">
+19
+</td>
+<td style="text-align:right;">
+40475
+</td>
+<td style="text-align:right;">
+4139720
+</td>
+<td style="text-align:right;">
+1435.5
+</td>
+<td style="text-align:right;">
+1406.3
+</td>
+<td style="text-align:right;">
+1464.6
+</td>
+<td style="text-align:right;">
+26.8
+</td>
+<td style="text-align:right;">
+0.001
+</td>
+</tr>
+<tr>
+<td style="text-align:right;">
+493302
+</td>
+<td style="text-align:right;">
+24541.0
+</td>
+<td style="text-align:right;">
+19
+</td>
+<td style="text-align:right;">
+40475
+</td>
+<td style="text-align:right;">
+4839512
+</td>
+<td style="text-align:right;">
+1724.5
+</td>
+<td style="text-align:right;">
+1654.9
+</td>
+<td style="text-align:right;">
+1794.0
+</td>
+<td style="text-align:right;">
+38.3
+</td>
+<td style="text-align:right;">
+0.001
+</td>
+</tr>
+</tbody>
+</table>
+<pre class="r"><code># Maximum value present in dataset for each variable for
+# counties in Virginia
+join %&gt;% group_by(County) %&gt;% filter(State.y == &quot;Virginia&quot;) %&gt;% 
+    select_if(is.numeric) %&gt;% select(-`ZIP Code`, -Footnote, 
+    -`Facility ID`) %&gt;% summarize_all(min) %&gt;% kbl(caption = &quot;Maximum Values by County, For Counties in Virginia&quot;) %&gt;% 
+    kable_classic(full_width = F, html_font = &quot;Cambria&quot;)</code></pre>
+<table class=" lightable-classic" style="font-family: Cambria; width: auto !important; margin-left: auto; margin-right: auto;">
+<caption>
+<span id="tab:unnamed-chunk-11">Table 1: </span>Maximum Values by County, For Counties in Virginia
+</caption>
+<thead>
+<tr>
+<th style="text-align:left;">
+County
+</th>
+<th style="text-align:right;">
+Deaths
+</th>
+<th style="text-align:right;">
+Population
+</th>
+<th style="text-align:right;">
+Crude Rate
+</th>
+<th style="text-align:right;">
+Crude Rate Lower 95% Confidence Interval
+</th>
+<th style="text-align:right;">
+Crude Rate Upper 95% Confidence Interval
+</th>
+<th style="text-align:right;">
+Crude Rate Standard Error
+</th>
+<th style="text-align:right;">
+% of Total Deaths
+</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td style="text-align:left;">
+Alexandria city
+</td>
+<td style="text-align:right;">
+14994
+</td>
+<td style="text-align:right;">
+2789101
+</td>
+<td style="text-align:right;">
+537.6
+</td>
+<td style="text-align:right;">
+529.0
+</td>
+<td style="text-align:right;">
+546.2
+</td>
+<td style="text-align:right;">
+4.4
+</td>
+<td style="text-align:right;">
+0.000
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+Charlottesville city
+</td>
+<td style="text-align:right;">
+5909
+</td>
+<td style="text-align:right;">
+872104
+</td>
+<td style="text-align:right;">
+677.6
+</td>
+<td style="text-align:right;">
+660.3
+</td>
+<td style="text-align:right;">
+694.8
+</td>
+<td style="text-align:right;">
+8.8
+</td>
+<td style="text-align:right;">
+0.000
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+Chesapeake city
+</td>
+<td style="text-align:right;">
+31063
+</td>
+<td style="text-align:right;">
+4404851
+</td>
+<td style="text-align:right;">
+705.2
+</td>
+<td style="text-align:right;">
+697.4
+</td>
+<td style="text-align:right;">
+713.0
+</td>
+<td style="text-align:right;">
+4.0
+</td>
+<td style="text-align:right;">
+0.001
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+Danville city
+</td>
+<td style="text-align:right;">
+14055
+</td>
+<td style="text-align:right;">
+885301
+</td>
+<td style="text-align:right;">
+1587.6
+</td>
+<td style="text-align:right;">
+1561.3
+</td>
+<td style="text-align:right;">
+1613.8
+</td>
+<td style="text-align:right;">
+13.4
+</td>
+<td style="text-align:right;">
+0.000
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+Emporia city
+</td>
+<td style="text-align:right;">
+1724
+</td>
+<td style="text-align:right;">
+112728
+</td>
+<td style="text-align:right;">
+1529.3
+</td>
+<td style="text-align:right;">
+1457.2
+</td>
+<td style="text-align:right;">
+1601.5
+</td>
+<td style="text-align:right;">
+36.8
+</td>
+<td style="text-align:right;">
+0.000
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+Franklin city
+</td>
+<td style="text-align:right;">
+2657
+</td>
+<td style="text-align:right;">
+167667
+</td>
+<td style="text-align:right;">
+1584.7
+</td>
+<td style="text-align:right;">
+1524.4
+</td>
+<td style="text-align:right;">
+1644.9
+</td>
+<td style="text-align:right;">
+30.7
+</td>
+<td style="text-align:right;">
+0.000
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+Fredericksburg city
+</td>
+<td style="text-align:right;">
+3948
+</td>
+<td style="text-align:right;">
+483319
+</td>
+<td style="text-align:right;">
+816.9
+</td>
+<td style="text-align:right;">
+791.4
+</td>
+<td style="text-align:right;">
+842.3
+</td>
+<td style="text-align:right;">
+13.0
+</td>
+<td style="text-align:right;">
+0.000
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+Galax city
+</td>
+<td style="text-align:right;">
+2360
+</td>
+<td style="text-align:right;">
+136855
+</td>
+<td style="text-align:right;">
+1724.5
+</td>
+<td style="text-align:right;">
+1654.9
+</td>
+<td style="text-align:right;">
+1794.0
+</td>
+<td style="text-align:right;">
+35.5
+</td>
+<td style="text-align:right;">
+0.000
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+Hampton city
+</td>
+<td style="text-align:right;">
+23393
+</td>
+<td style="text-align:right;">
+2782126
+</td>
+<td style="text-align:right;">
+840.8
+</td>
+<td style="text-align:right;">
+830.1
+</td>
+<td style="text-align:right;">
+851.6
+</td>
+<td style="text-align:right;">
+5.5
+</td>
+<td style="text-align:right;">
+0.000
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+Harrisonburg city
+</td>
+<td style="text-align:right;">
+5378
+</td>
+<td style="text-align:right;">
+951263
+</td>
+<td style="text-align:right;">
+565.4
+</td>
+<td style="text-align:right;">
+550.2
+</td>
+<td style="text-align:right;">
+580.5
+</td>
+<td style="text-align:right;">
+7.7
+</td>
+<td style="text-align:right;">
+0.000
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+Hopewell city
+</td>
+<td style="text-align:right;">
+5638
+</td>
+<td style="text-align:right;">
+447285
+</td>
+<td style="text-align:right;">
+1260.5
+</td>
+<td style="text-align:right;">
+1227.6
+</td>
+<td style="text-align:right;">
+1293.4
+</td>
+<td style="text-align:right;">
+16.8
+</td>
+<td style="text-align:right;">
+0.000
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+Lexington city
+</td>
+<td style="text-align:right;">
+1412
+</td>
+<td style="text-align:right;">
+139985
+</td>
+<td style="text-align:right;">
+1008.7
+</td>
+<td style="text-align:right;">
+956.1
+</td>
+<td style="text-align:right;">
+1061.3
+</td>
+<td style="text-align:right;">
+26.8
+</td>
+<td style="text-align:right;">
+0.000
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+Lynchburg city
+</td>
+<td style="text-align:right;">
+15625
+</td>
+<td style="text-align:right;">
+1465565
+</td>
+<td style="text-align:right;">
+1066.1
+</td>
+<td style="text-align:right;">
+1049.4
+</td>
+<td style="text-align:right;">
+1082.9
+</td>
+<td style="text-align:right;">
+8.5
+</td>
+<td style="text-align:right;">
+0.000
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+Manassas city
+</td>
+<td style="text-align:right;">
+4013
+</td>
+<td style="text-align:right;">
+760233
+</td>
+<td style="text-align:right;">
+527.9
+</td>
+<td style="text-align:right;">
+511.5
+</td>
+<td style="text-align:right;">
+544.2
+</td>
+<td style="text-align:right;">
+8.3
+</td>
+<td style="text-align:right;">
+0.000
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+Norfolk city
+</td>
+<td style="text-align:right;">
+39771
+</td>
+<td style="text-align:right;">
+4839512
+</td>
+<td style="text-align:right;">
+821.8
+</td>
+<td style="text-align:right;">
+813.7
+</td>
+<td style="text-align:right;">
+829.9
+</td>
+<td style="text-align:right;">
+4.1
+</td>
+<td style="text-align:right;">
+0.001
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+Norton city
+</td>
+<td style="text-align:right;">
+905
+</td>
+<td style="text-align:right;">
+78571
+</td>
+<td style="text-align:right;">
+1151.8
+</td>
+<td style="text-align:right;">
+1076.8
+</td>
+<td style="text-align:right;">
+1226.9
+</td>
+<td style="text-align:right;">
+38.3
+</td>
+<td style="text-align:right;">
+0.000
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+Petersburg city
+</td>
+<td style="text-align:right;">
+9322
+</td>
+<td style="text-align:right;">
+649396
+</td>
+<td style="text-align:right;">
+1435.5
+</td>
+<td style="text-align:right;">
+1406.3
+</td>
+<td style="text-align:right;">
+1464.6
+</td>
+<td style="text-align:right;">
+14.9
+</td>
+<td style="text-align:right;">
+0.000
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+Portsmouth city
+</td>
+<td style="text-align:right;">
+21240
+</td>
+<td style="text-align:right;">
+1940288
+</td>
+<td style="text-align:right;">
+1094.7
+</td>
+<td style="text-align:right;">
+1080.0
+</td>
+<td style="text-align:right;">
+1109.4
+</td>
+<td style="text-align:right;">
+7.5
+</td>
+<td style="text-align:right;">
+0.000
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+Richmond city
+</td>
+<td style="text-align:right;">
+40475
+</td>
+<td style="text-align:right;">
+4139720
+</td>
+<td style="text-align:right;">
+977.7
+</td>
+<td style="text-align:right;">
+968.2
+</td>
+<td style="text-align:right;">
+987.2
+</td>
+<td style="text-align:right;">
+4.9
+</td>
+<td style="text-align:right;">
+0.001
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+Roanoke city
+</td>
+<td style="text-align:right;">
+24161
+</td>
+<td style="text-align:right;">
+1930912
+</td>
+<td style="text-align:right;">
+1251.3
+</td>
+<td style="text-align:right;">
+1235.5
+</td>
+<td style="text-align:right;">
+1267.1
+</td>
+<td style="text-align:right;">
+8.0
+</td>
+<td style="text-align:right;">
+0.000
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+Salem city
+</td>
+<td style="text-align:right;">
+6147
+</td>
+<td style="text-align:right;">
+497649
+</td>
+<td style="text-align:right;">
+1235.2
+</td>
+<td style="text-align:right;">
+1204.3
+</td>
+<td style="text-align:right;">
+1266.1
+</td>
+<td style="text-align:right;">
+15.8
+</td>
+<td style="text-align:right;">
+0.000
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+Suffolk city
+</td>
+<td style="text-align:right;">
+13781
+</td>
+<td style="text-align:right;">
+1602096
+</td>
+<td style="text-align:right;">
+860.2
+</td>
+<td style="text-align:right;">
+845.8
+</td>
+<td style="text-align:right;">
+874.5
+</td>
+<td style="text-align:right;">
+7.3
+</td>
+<td style="text-align:right;">
+0.000
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+Winchester city
+</td>
+<td style="text-align:right;">
+5222
+</td>
+<td style="text-align:right;">
+520090
+</td>
+<td style="text-align:right;">
+1004.1
+</td>
+<td style="text-align:right;">
+976.8
+</td>
+<td style="text-align:right;">
+1031.3
+</td>
+<td style="text-align:right;">
+13.9
+</td>
+<td style="text-align:right;">
+0.000
+</td>
+</tr>
+</tbody>
+</table>
+<div id="using-pivot_longer-and-pivot_wider-to-make-the-data-wide-and-then-long-again" class="section level2">
+<h2>Using pivot_longer and pivot_wider to make the data wide and then long again</h2>
+<pre class="r"><code># rename state_abbr to stateabbr to make pivoting easier
+join &lt;- join %&gt;% rename(Stateabbr = State_abbr)
+# pivot
+widejoin &lt;- join %&gt;% pivot_wider(names_from = &quot;Measure ID&quot;, values_from = &quot;Population&quot;)
+longjoin &lt;- widejoin %&gt;% pivot_longer(contains(&quot;_&quot;), names_to = &quot;Measure ID&quot;, 
+    values_to = &quot;Population&quot;)
+# visualize
+glimpse(widejoin)</code></pre>
+<pre><code>## Rows: 997
+## Columns: 44
+## $ `Facility ID`                              &lt;dbl&gt; 210002, 210002, 210002, 21…
+## $ `Facility Name`                            &lt;chr&gt; &quot;UNIVERSITY OF MARYLAND ME…
+## $ Address                                    &lt;chr&gt; &quot;22 SOUTH  GREENE STREET&quot;,…
+## $ City                                       &lt;chr&gt; &quot;BALTIMORE&quot;, &quot;BALTIMORE&quot;, …
+## $ State.x                                    &lt;chr&gt; &quot;MD&quot;, &quot;MD&quot;, &quot;MD&quot;, &quot;MD&quot;, &quot;M…
+## $ `ZIP Code`                                 &lt;dbl&gt; 21201, 21201, 21201, 21201…
+## $ County                                     &lt;chr&gt; &quot;Baltimore city&quot;, &quot;Baltimo…
+## $ `Phone Number`                             &lt;chr&gt; &quot;(410) 328-8667&quot;, &quot;(410) 3…
+## $ `Measure Name`                             &lt;chr&gt; &quot;Rate of complications for…
+## $ `Compared to National`                     &lt;chr&gt; &quot;No Different Than the Nat…
+## $ Denominator                                &lt;chr&gt; &quot;29&quot;, &quot;191&quot;, &quot;309&quot;, &quot;119&quot;,…
+## $ Score                                      &lt;chr&gt; &quot;2.8&quot;, &quot;13.9&quot;, &quot;1.8&quot;, &quot;7&quot;,…
+## $ `Lower Estimate`                           &lt;chr&gt; &quot;1.6&quot;, &quot;11.1&quot;, &quot;1&quot;, &quot;5&quot;, &quot;…
+## $ `Higher Estimate`                          &lt;chr&gt; &quot;4.7&quot;, &quot;17.100000000000001…
+## $ Footnote                                   &lt;dbl&gt; NA, NA, NA, NA, NA, NA, NA…
+## $ `Start Date`                               &lt;dttm&gt; 2016-04-01, 2016-07-01, 2…
+## $ `End Date`                                 &lt;dttm&gt; 2019-03-31, 2019-06-30, 2…
+## $ State.y                                    &lt;chr&gt; &quot;Maryland&quot;, &quot;Maryland&quot;, &quot;M…
+## $ Stateabbr                                  &lt;chr&gt; &quot; MD&quot;, &quot; MD&quot;, &quot; MD&quot;, &quot; MD&quot;…
+## $ Deaths                                     &lt;dbl&gt; 143566, 143566, 143566, 14…
+## $ `Crude Rate`                               &lt;dbl&gt; 1148.7, 1148.7, 1148.7, 11…
+## $ `Crude Rate Lower 95% Confidence Interval` &lt;dbl&gt; 1142.8, 1142.8, 1142.8, 11…
+## $ `Crude Rate Upper 95% Confidence Interval` &lt;dbl&gt; 1154.7, 1154.7, 1154.7, 11…
+## $ `Crude Rate Standard Error`                &lt;dbl&gt; 3, 3, 3, 3, 3, 3, 3, 3, 3,…
+## $ `% of Total Deaths`                        &lt;dbl&gt; 0.003, 0.003, 0.003, 0.003…
+## $ COMP_HIP_KNEE                              &lt;dbl&gt; 12497715, NA, NA, NA, NA, …
+## $ MORT_30_AMI                                &lt;dbl&gt; NA, 12497715, NA, NA, NA, …
+## $ MORT_30_CABG                               &lt;dbl&gt; NA, NA, 12497715, NA, NA, …
+## $ MORT_30_COPD                               &lt;dbl&gt; NA, NA, NA, 12497715, NA, …
+## $ MORT_30_HF                                 &lt;dbl&gt; NA, NA, NA, NA, 12497715, …
+## $ MORT_30_PN                                 &lt;dbl&gt; NA, NA, NA, NA, NA, 124977…
+## $ MORT_30_STK                                &lt;dbl&gt; NA, NA, NA, NA, NA, NA, 12…
+## $ PSI_10_POST_KIDNEY                         &lt;dbl&gt; NA, NA, NA, NA, NA, NA, NA…
+## $ PSI_11_POST_RESP                           &lt;dbl&gt; NA, NA, NA, NA, NA, NA, NA…
+## $ PSI_12_POSTOP_PULMEMB_DVT                  &lt;dbl&gt; NA, NA, NA, NA, NA, NA, NA…
+## $ PSI_13_POST_SEPSIS                         &lt;dbl&gt; NA, NA, NA, NA, NA, NA, NA…
+## $ PSI_14_POSTOP_DEHIS                        &lt;dbl&gt; NA, NA, NA, NA, NA, NA, NA…
+## $ PSI_15_ACC_LAC                             &lt;dbl&gt; NA, NA, NA, NA, NA, NA, NA…
+## $ PSI_3_ULCER                                &lt;dbl&gt; NA, NA, NA, NA, NA, NA, NA…
+## $ PSI_4_SURG_COMP                            &lt;dbl&gt; NA, NA, NA, NA, NA, NA, NA…
+## $ PSI_6_IAT_PTX                              &lt;dbl&gt; NA, NA, NA, NA, NA, NA, NA…
+## $ PSI_8_POST_HIP                             &lt;dbl&gt; NA, NA, NA, NA, NA, NA, NA…
+## $ PSI_90_SAFETY                              &lt;dbl&gt; NA, NA, NA, NA, NA, NA, NA…
+## $ PSI_9_POST_HEM                             &lt;dbl&gt; NA, NA, NA, NA, NA, NA, NA…</code></pre>
+<pre class="r"><code>glimpse(longjoin)</code></pre>
+<pre><code>## Rows: 18,943
+## Columns: 27
+## $ `Facility ID`                              &lt;dbl&gt; 210002, 210002, 210002, 21…
+## $ `Facility Name`                            &lt;chr&gt; &quot;UNIVERSITY OF MARYLAND ME…
+## $ Address                                    &lt;chr&gt; &quot;22 SOUTH  GREENE STREET&quot;,…
+## $ City                                       &lt;chr&gt; &quot;BALTIMORE&quot;, &quot;BALTIMORE&quot;, …
+## $ State.x                                    &lt;chr&gt; &quot;MD&quot;, &quot;MD&quot;, &quot;MD&quot;, &quot;MD&quot;, &quot;M…
+## $ `ZIP Code`                                 &lt;dbl&gt; 21201, 21201, 21201, 21201…
+## $ County                                     &lt;chr&gt; &quot;Baltimore city&quot;, &quot;Baltimo…
+## $ `Phone Number`                             &lt;chr&gt; &quot;(410) 328-8667&quot;, &quot;(410) 3…
+## $ `Measure Name`                             &lt;chr&gt; &quot;Rate of complications for…
+## $ `Compared to National`                     &lt;chr&gt; &quot;No Different Than the Nat…
+## $ Denominator                                &lt;chr&gt; &quot;29&quot;, &quot;29&quot;, &quot;29&quot;, &quot;29&quot;, &quot;2…
+## $ Score                                      &lt;chr&gt; &quot;2.8&quot;, &quot;2.8&quot;, &quot;2.8&quot;, &quot;2.8&quot;…
+## $ `Lower Estimate`                           &lt;chr&gt; &quot;1.6&quot;, &quot;1.6&quot;, &quot;1.6&quot;, &quot;1.6&quot;…
+## $ `Higher Estimate`                          &lt;chr&gt; &quot;4.7&quot;, &quot;4.7&quot;, &quot;4.7&quot;, &quot;4.7&quot;…
+## $ Footnote                                   &lt;dbl&gt; NA, NA, NA, NA, NA, NA, NA…
+## $ `Start Date`                               &lt;dttm&gt; 2016-04-01, 2016-04-01, 2…
+## $ `End Date`                                 &lt;dttm&gt; 2019-03-31, 2019-03-31, 2…
+## $ State.y                                    &lt;chr&gt; &quot;Maryland&quot;, &quot;Maryland&quot;, &quot;M…
+## $ Stateabbr                                  &lt;chr&gt; &quot; MD&quot;, &quot; MD&quot;, &quot; MD&quot;, &quot; MD&quot;…
+## $ Deaths                                     &lt;dbl&gt; 143566, 143566, 143566, 14…
+## $ `Crude Rate`                               &lt;dbl&gt; 1148.7, 1148.7, 1148.7, 11…
+## $ `Crude Rate Lower 95% Confidence Interval` &lt;dbl&gt; 1142.8, 1142.8, 1142.8, 11…
+## $ `Crude Rate Upper 95% Confidence Interval` &lt;dbl&gt; 1154.7, 1154.7, 1154.7, 11…
+## $ `Crude Rate Standard Error`                &lt;dbl&gt; 3, 3, 3, 3, 3, 3, 3, 3, 3,…
+## $ `% of Total Deaths`                        &lt;dbl&gt; 0.003, 0.003, 0.003, 0.003…
+## $ `Measure ID`                               &lt;chr&gt; &quot;COMP_HIP_KNEE&quot;, &quot;MORT_30_…
+## $ Population                                 &lt;dbl&gt; 12497715, NA, NA, NA, NA, …</code></pre>
+<p>Looking at the readout of the datasets, you'll notice that I was able to pivot my data wider and select the values I pivoted, and then pivot longer to recreate my initial dataset.</p>
+</div>
+<div id="making-visualizations-three-plots" class="section level2">
+<h2>Making visualizations (three plots)</h2>
+<pre class="r"><code># heatmap
+library(tidyverse)
+library(ggplot2)
+# data
+corjoin &lt;- join %&gt;% select_if(is.numeric) %&gt;% select(-`ZIP Code`, 
+    -Footnote, -`Facility ID`) %&gt;% cor(use = &quot;pair&quot;) %&gt;% as.data.frame %&gt;% 
+    rownames_to_column %&gt;% pivot_longer(-1)
+# plot
+ggplot(data = corjoin, aes(rowname, name, fill = value)) + geom_tile(color = &quot;white&quot;) + 
+    scale_fill_gradient2(low = &quot;blue&quot;, high = &quot;red&quot;, mid = &quot;white&quot;, 
+        midpoint = 0, limit = c(-1, 1), space = &quot;Lab&quot;, name = &quot;Pearson\nCorrelation&quot;) + 
+    theme_minimal() + theme(axis.text.x = element_text(angle = 45, 
+    vjust = 1, size = 10, hjust = 1)) + geom_text(size = 2.5, 
+    aes(label = round(value, 2))) + coord_fixed()</code></pre>
+<p><img src="../../project/project1_files/figure-html/unnamed-chunk-13-1.png" width="672" style="display: block; margin: auto;" /></p>
+<p>Based on the correlation matrix, one can see a strong correlations betweeen Deaths and Population, and strong correlations between the Crude rate lower 95% confidence interval and the Crude rate upper 95% confidence interval.</p>
+<p>The correlation between Deaths and Population makes sense; in counties with large populations, a higher number of deaths is expected because of the high number of habitants. The strong correlation between the Crude rate lower 95% confidence interval and the Crude rate upper 95% confidence interval, indicates that when the upper confidence interval increases, the lower confidence interval increases by a similar amount.</p>
+<pre class="r"><code># Death, county: which counites have better scores?  make
+# score a numerical variable, remove footnote because it has
+# so many NAs
+join2 &lt;- join %&gt;% select(-Footnote) %&gt;% mutate(Score = as.numeric(Score))
+# Get the average scores by county
+avgjoin &lt;- join2 %&gt;% select(County, Score, Population) %&gt;% na.omit %&gt;% 
+    group_by(County) %&gt;% summarize(Avg = mean(Score))
+# graph
+ggplot(join2, aes(x = City, y = Deaths, color = `Compared to National`)) + 
+    theme(axis.text.x = element_text(angle = 45, vjust = 1, size = 8, 
+        hjust = 1)) + geom_point() + scale_color_brewer(palette = &quot;Dark2&quot;)</code></pre>
+<p><img src="../../project/project1_files/figure-html/unnamed-chunk-14-1.png" width="672" style="display: block; margin: auto;" /></p>
+<p>I created the City vs Deaths scatter plot to see if there is a trend across counties' recorded total deaths and hospital scores compared to the national average. Instead, the graph revealed something else about my data: there are gaps of information. I expected to see more of the points colored in blues, oranges, and brown, indicating high/low scores. However, man of the points are purple or green, indicating either no detectable difference from the national rate or that information not available. The lack of infomation is likely in the national database; these counties may not have recorded enough score measures for a reasonable comparison to be published of the county scores vs the national rate.</p>
+<p>Either way, this graph indicates that for several of the counties, there is data not available, or no difference could be detected between the county rate and national rate.</p>
+<pre class="r"><code># summary graph
+library(&quot;RColorBrewer&quot;)
+ggplot(join2, aes(x = County, fill = Population)) + geom_bar(aes(y = Score), 
+    stat = &quot;summary&quot;, fun = mean) + theme(axis.text.x = element_text(angle = 45, 
+    vjust = 1, size = 10, hjust = 1)) + scale_fill_gradient(low = &quot;blue&quot;, 
+    high = &quot;red&quot;) + scale_y_continuous(breaks = c(5, 10, 15, 
+    20, 25, 30, 35))</code></pre>
+<p><img src="../../project/project1_files/figure-html/unnamed-chunk-15-1.png" width="672" style="display: block; margin: auto;" /></p>
+</div>
+<div id="clustering-k-means" class="section level2">
+<h2>Clustering (k-means)</h2>
+<pre class="r"><code># Using K-means clustering.
+set.seed(348)
+library(cluster)
+library(dplyr)
+# select only numeric data, take out the NAs and remove
+# facility ID and zip code because although that data is
+# numeric, it is not actually informative for running summary
+# statisics on it.
+numericdata &lt;- join2 %&gt;% select_if(is.numeric) %&gt;% na.omit %&gt;% 
+    select(-`Facility ID`, -`ZIP Code`)
+# scale data, run kmeans
+clusterdata &lt;- numericdata %&gt;% na.omit %&gt;% scale %&gt;% kmeans(10)
+# look at the data
+clusterdata$cluster</code></pre>
+<pre><code>##   [1] 5 5 5 5 5 5 5 5 5 5 5 5 5 5 4 5 5 5 5 5 5 5 5 5 5 5 5 5 5 5 5 5 4 5 5 5 5
+##  [38] 5 5 5 5 5 5 5 5 5 5 5 5 5 4 5 5 5 5 5 5 5 5 5 5 5 5 5 5 5 5 5 4 5 5 5 5 5
+##  [75] 5 5 5 5 5 5 5 5 5 5 5 5 5 4 5 5 5 5 5 5 5 5 5 5 5 5
+##  [ reached getOption(&quot;max.print&quot;) -- omitted 596 entries ]</code></pre>
+<pre class="r"><code>clusterdata$centers</code></pre>
+<pre><code>##         Score      Deaths  Population  Crude Rate
+## 1  -0.2056799 -0.77262921 -0.88277209  1.09851787
+## 2  -0.2043861 -0.94735502 -1.03914599  1.62361340
+## 3  -0.2065256 -0.32447805 -0.09677443 -0.97421805
+## 4   4.5472794  0.04897072  0.06235247 -0.19453402
+## 5  -0.2173008  1.52676850  1.49254558  0.34640920
+## 6  -0.2126327 -0.77922541 -0.77564265 -0.95659979
+## 7  -0.2204897 -0.83786337 -0.75499902 -1.89674623
+## 8  -0.2195498  0.21987983  0.26026780  0.02371696
+## 9  -0.2191189 -0.27414927 -0.21773561 -0.28784795
+## 10 -0.1984546 -0.75134048 -0.81354526 -0.01309272
+##    Crude Rate Lower 95% Confidence Interval
+## 1                                1.09557587
+## 2                                1.47642593
+## 3                               -0.96765512
+## 4                               -0.18164876
+## 5                                0.40107994
+## 6                               -0.98418820
+## 7                               -1.93844036
+## 8                                0.06097407
+## 9                               -0.26613899
+## 10                              -0.03023914
+##    Crude Rate Upper 95% Confidence Interval Crude Rate Standard Error
+## 1                               1.097616696                0.54355446
+## 2                               1.756727114                2.94494620
+## 3                              -0.977381358               -0.54177909
+## 4                              -0.206038827               -0.28169276
+## 5                               0.294225701               -0.66253669
+## 6                              -0.927903533               -0.02063582
+## 7                              -1.851881554               -0.23885184
+## 8                              -0.011082116               -0.55020404
+## 9                              -0.307410292               -0.44910465
+## 10                              0.003000439                0.25045662
+##    % of Total Deaths
+## 1        -0.84882813
+## 2        -0.84882813
+## 3        -0.05900944
+## 4         0.04290265
+## 5         1.52062792
+## 6        -0.84882813
+## 7        -0.84882813
+## 8        -0.05900944
+## 9        -0.05900944
+## 10       -0.84882813</code></pre>
+<pre class="r"><code># calculate wss
+wss &lt;- vector()
+for (i in 1:10) {
+    data &lt;- numericdata %&gt;% kmeans(i)
+    wss[i] &lt;- data$tot.withinss
+}
+
+# making a graph with wss
+ggplot() + geom_point(aes(x = 1:10, y = wss)) + geom_path(aes(x = 1:10, 
+    y = wss)) + xlab(&quot;clusters&quot;) + scale_x_continuous(breaks = 1:10)</code></pre>
+<p><img src="../../project/project1_files/figure-html/unnamed-chunk-16-1.png" width="672" style="display: block; margin: auto;" /></p>
+<pre class="r"><code># according to the graph, the elbow appears to be at 2, so 2
+# is probably a good number of clusters to use.
+clusterdata2 &lt;- numericdata %&gt;% na.omit %&gt;% scale %&gt;% kmeans(2)
+
+# saving the cluster assignments as a column in my dataset
+kmeansclust2 &lt;- numericdata %&gt;% mutate(cluster = as.factor(clusterdata2$cluster))
+
+# plot data- color by final custer assignment
+kmeansclust2 %&gt;% ggplot(aes(Deaths, Score, color = cluster)) + 
+    geom_point()</code></pre>
+<p><img src="../../project/project1_files/figure-html/unnamed-chunk-16-2.png" width="672" style="display: block; margin: auto;" /></p>
+<pre class="r"><code>kmeansclust2 %&gt;% ggplot(aes(Score, Population, color = cluster)) + 
+    geom_point()</code></pre>
+<p><img src="../../project/project1_files/figure-html/unnamed-chunk-16-3.png" width="672" style="display: block; margin: auto;" /></p>
+<pre class="r"><code># How many observations are in each cluster?
+table(kmeansclust2$cluster)</code></pre>
+<pre><code>## 
+##   1   2 
+## 391 305</code></pre>
+<pre class="r"><code># there are 195 observations in cluster 1, and 501
+# observations in cluster 2.</code></pre>
+<p>From the joined dataset, I selected the numeric data, removed the NAs, and dropped the <code>Facility ID</code> and <code>ZIP Code</code> variables because although these variables are numeric, they are not really infomative in terms of clustering by them. I then performed kmeans clustering on my data. I calculated and plotted WSS to determine a good number of clusters to use. The elbow of the WSS graph occurs at around 2, so 2 seems to be a good number of clusters to use. I saved these cluster assignments as a separate column into my dataset and then plotted the data by Score vs Deaths and Score vs Population, colored by cluster assignment. The clusters are actualy well spread out and grouped together, so the graphs support the choice of 2 as a good number of clusters.</p>
+<pre class="r"><code># computing silhouette width in kmeans
+set.seed(348)
+sil_width &lt;- vector()  #create an empty vector to hold the average sil width
+for (i in 2:10) {
+    kms &lt;- kmeans(numericdata, centers = i)  #compute k-means solution
+    sil &lt;- silhouette(kms$cluster, dist(numericdata))  #get sil widths
+    sil_width[i] &lt;- mean(sil[, 3])  #take averages (higher is better)
+}
+
+# according to the following graph, it looks like the max
+# mean sil_width occurs around 7, however, 2 is also still
+# relatively good.
+ggplot() + geom_line(aes(x = 1:10, y = sil_width)) + scale_x_continuous(name = &quot;k&quot;, 
+    breaks = 1:10)</code></pre>
+<p><img src="../../project/project1_files/figure-html/unnamed-chunk-17-1.png" width="672" style="display: block; margin: auto;" /></p>
+<pre class="r"><code># i went ahead and also sorted into 7 clusters, added this as
+# a column to my data, and visualized it.
+
+# sort
+clusterdata8 &lt;- numericdata %&gt;% na.omit %&gt;% scale %&gt;% kmeans(8)
+
+# column
+kmeansclust8 &lt;- numericdata %&gt;% mutate(cluster = as.factor(clusterdata8$cluster))
+
+# visualize
+kmeansclust8 %&gt;% ggplot(aes(Deaths, Score, color = cluster)) + 
+    geom_point()</code></pre>
+<p><img src="../../project/project1_files/figure-html/unnamed-chunk-17-2.png" width="672" style="display: block; margin: auto;" /></p>
+<pre class="r"><code>kmeansclust8 %&gt;% ggplot(aes(Score, Population, color = cluster)) + 
+    geom_point()</code></pre>
+<p><img src="../../project/project1_files/figure-html/unnamed-chunk-17-3.png" width="672" style="display: block; margin: auto;" /></p>
+<p>I also wanted to use a more modern approach to calculate the ideal cluster assignment size, so I calculated and plotted maximum average silhouette width. According to the graph, it appears that the maximum sillhouette width occurs around 8, however 2 is also still relatively high up on the graph. I then went ahead and sorted my data into 8 clusters and visualized it using the same variables as I had on the data when I used to clusters above.</p>
+<p>For the 8 cluster Score vs population graph, one cluster is separated far based on high score values, and the other seven clusters seem to all overlap eachother near 0 for the score. In the 2 cluster graph, there are still some points plotted near different clusters. But for the 8 cluster graph, one cluster is able to be separated very distinctly from the other 7. The other 7 clusters are more similar in score, but still grouped rather distinctly across the other varibales. The higher number of clusters seems to have allowed for better separation and less mixing of points plotted near other groups that was seen in the 2 cluster graph, so the 8 cluster approach appears superior.</p>
+<p>I also visualized the data based on 7 clusters, because 7 was a close runner up to 8 in the silhouette widths graph. The data for the 7 cluster graph is distributed similarly to the 8 cluster graph (see below).</p>
+<pre class="r"><code># sort
+clusterdata7 &lt;- numericdata %&gt;% na.omit %&gt;% scale %&gt;% kmeans(7)
+# column
+kmeansclust7 &lt;- numericdata %&gt;% mutate(cluster = as.factor(clusterdata7$cluster))
+# visualize
+kmeansclust7 %&gt;% ggplot(aes(Deaths, Score, color = cluster)) + 
+    geom_point()</code></pre>
+<p><img src="../../project/project1_files/figure-html/unnamed-chunk-18-1.png" width="672" style="display: block; margin: auto;" /></p>
+<pre class="r"><code>kmeansclust7 %&gt;% ggplot(aes(Score, Population, color = cluster)) + 
+    geom_point()</code></pre>
+<p><img src="../../project/project1_files/figure-html/unnamed-chunk-18-2.png" width="672" style="display: block; margin: auto;" /></p>
+</div>
 </div>
 
             

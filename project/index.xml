@@ -6,23 +6,24 @@
     <description>Recent content in Projects on Britney Bailey</description>
     <generator>Hugo -- gohugo.io</generator>
     <language>en-US</language>
-    <lastBuildDate>Tue, 01 Dec 2020 00:00:00 +0000</lastBuildDate><atom:link href="/project/index.xml" rel="self" type="application/rss+xml" />
+    <lastBuildDate>Sun, 18 Oct 2020 00:00:00 +0000</lastBuildDate><atom:link href="/project/index.xml" rel="self" type="application/rss+xml" />
     <item>
       <title>Project 1</title>
       <link>/project/project1/</link>
-      <pubDate>Tue, 01 Dec 2020 00:00:00 +0000</pubDate>
+      <pubDate>Sun, 18 Oct 2020 00:00:00 +0000</pubDate>
       
       <guid>/project/project1/</guid>
-      <description> Test Project 1  </description>
+      <description>About the data In my project, I have chosen to include two datasets, which I will refer to as cdc and hospital. The cdc dataset contains information from the CDC on mortality in different cities/counties in the US. Some of the variables in the cdc dataset include number of deaths, death rates compared to the national rate, population size of the county, and crude mortality rates.
+The hospital dataset is sourced from the medicare website, where the government makes data available regarding patients in different cities/counties.</description>
     </item>
     
     <item>
-      <title>Project 2</title>
+      <title>Project 2: Modeling, Testing, and Predicting</title>
       <link>/project/project2/</link>
-      <pubDate>Tue, 01 Dec 2020 00:00:00 +0000</pubDate>
+      <pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate>
       
       <guid>/project/project2/</guid>
-      <description> Test Project 2  </description>
+      <description>Britney Bailey, EID: BNB2375  Modeling #read in data library(readxl) microbe_directory&amp;lt;-read_excel(&amp;quot;microbe-directory.xlsx&amp;quot;) #read_excel(&amp;quot;C:\\BNB2375_SDS348\\microbe-directory.xlsx&amp;quot;) microbe_directory-&amp;gt;micro #read_excel(&amp;quot;C:\\Users\\britn\\Desktop\\microbe-directory.xlsx&amp;quot;)  0. (5 pts) Introduce your dataset and each of your variables (or just your main variables if you have lots) in a paragraph. What are they measuring? How many observations?  For project 2, I will be looking at The Microbe Directory. The goal of The Microbe Directory is to compile information categorizing over 7,000 microorganisms.</description>
     </item>
     
   </channel>
