@@ -1,7 +1,7 @@
 ---
 title: 'Project 2: Modeling, Testing, and Predicting'
 author: "SDS348"
-hidedate: true
+date: "2020-11-10"
 output:
   html_document:
     toc: yes

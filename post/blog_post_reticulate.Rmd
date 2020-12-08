@@ -1,6 +1,8 @@
 ---
 title: "Blog Post: Reticulate"
 output: html_document
+date: "2020-12-07"
+
 ---
 ### Reticulate: Introduction
 Reticulate is a great tool; it allows you to write code chunks in multiple languages and have these code chunks be able to communicate with eachother. Check out the list of languages you can use with this feature:

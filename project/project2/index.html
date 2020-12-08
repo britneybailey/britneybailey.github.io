@@ -57,6 +57,14 @@
             <strong><a href="../../project/project2/">Project 2: Modeling, Testing, and Predicting</a></strong>
           </h3>
         </div>
+ 
+<div class="blog-title">
+          <h4>
+         November 10, 2020 
+            &nbsp;&nbsp;
+            
+          </h4>
+        </div>
 
         <div class="panel panel-default">
           <div class="panel-body">
@@ -400,10 +408,10 @@ coefs</code></pre>
 <pre class="r"><code>bootstrappedcoefs</code></pre>
 <pre><code>## (Intercept) kingdomBacteria kingdomEukaryota
 kingdomViruses centerph kingdomBacteria:centerph
-## 1 1.291665 1.398533 8.442334 2.778992 0.7718181
-0.8743331
+## 1 1.277012 1.389692 8.656767 2.747681 0.7744061
+0.8756674
 ## kingdomEukaryota:centerph kingdomViruses:centerph
-## 1 13.21418 1.226117</code></pre>
+## 1 13.59506 1.214834</code></pre>
 <p>The bootstrapped SEs are larger than the original SEs, but mostly smaller than the robust SEs.There are a few bootstrapped SEs that are larger than the robust SEs, such as the estimate for kingdomEukaryota. However, the robust SEs are in general larger than the other two groups of SEs. So, the robust SEs would be the best to use for analysis.</p>
 <ul>
 <li><strong>5. (25 pts)</strong> Fit a logistic regression model predicting a binary variable (if you don't have one, make/get one) from at least two explanatory variables (interaction not necessary).</li>
