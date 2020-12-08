@@ -1,0 +1,212 @@
+<!DOCTYPE html>
+<html lang="en-US">
+  <head>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="author" content="Britney Bailey" />
+    
+    <link rel="shortcut icon" type="image/x-icon" href="../../../../../img/favicon.ico">
+    <title>Reticulate</title>
+    <meta name="generator" content="Hugo 0.79.0" />
+    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css" integrity="sha384-BVYiiSIFeK1dGmJRAkycuHAHRg32OmUcww7on3RYdg4Va+PmSTsz/K68vbdEjh4u" crossorigin="anonymous">
+    <link rel="stylesheet" type="text/css" href="../../../../../css/main.css" />
+    <link rel="stylesheet" type="text/css" href="https://maxcdn.bootstrapcdn.com/font-awesome/4.7.0/css/font-awesome.min.css" />
+    <link rel="stylesheet" type="text/css" href="https://fonts.googleapis.com/css?family=Source+Sans+Pro:200,400,200bold,400old" />
+    
+    <!--[if lt IE 9]>
+			<script src="https://oss.maxcdn.com/libs/html5shiv/3.7.0/html5shiv.js"></script>
+			<script src="https://oss.maxcdn.com/libs/respond.js/1.4.2/respond.min.js"></script>
+		<![endif]-->
+
+    
+  </head>
+
+  <body>
+    <div id="wrap">
+      
+      <nav class="navbar navbar-default">
+  <div class="container">
+    <div class="navbar-header">
+      <a class="navbar-brand" href="../../../../../"><i class="fa fa-home"></i></a>
+      <button type="button" class="navbar-toggle" data-toggle="collapse" data-target="#navbar">
+        <span class="icon-bar"></span>
+        <span class="icon-bar"></span>
+        <span class="icon-bar"></span>
+      </button>
+    </div>
+    <div class="navbar-collapse collapse" id="navbar">
+      <ul class="nav navbar-nav navbar-right">
+      
+        
+        <li><a href="../../../../../post/">BLOG</a></li>
+        
+        <li><a href="../../../../../projects/">PROJECTS</a></li>
+        
+        <li><a href="../../../../../resume/">RESUME</a></li>
+        
+      
+      </ul>
+    </div>
+  </div>
+</nav>
+
+      <div class="container">
+        <div class="blog-post">
+          <h3>
+            <strong><a href="../../../../../post/1/01/01/reticulate/">Reticulate</a></strong>
+          </h3>
+        </div>
+ 
+<div class="blog-title">
+          <h4>
+         January 1, 0001 
+            &nbsp;&nbsp;
+            
+          </h4>
+        </div>
+
+        <div class="panel panel-default">
+          <div class="panel-body">
+            <div class="blogpost">
+              
+
+
+<div id="reticulate-introduction" class="section level3">
+<h3>Reticulate: Introduction</h3>
+<p>Reticulate is a great tool; it allows you to write code chunks in multiple languages and have these code chunks be able to communicate with eachother. Check out the list of languages you can use with this feature:</p>
+<pre class="r"><code>#This is an R code chunk.
+names(knitr::knit_engines$get())</code></pre>
+<pre><code>##  [1] &quot;awk&quot;         &quot;bash&quot;        &quot;coffee&quot;      &quot;gawk&quot;        &quot;groovy&quot;     
+##  [6] &quot;haskell&quot;     &quot;lein&quot;        &quot;mysql&quot;       &quot;node&quot;        &quot;octave&quot;     
+## [11] &quot;perl&quot;        &quot;psql&quot;        &quot;Rscript&quot;     &quot;ruby&quot;        &quot;sas&quot;        
+## [16] &quot;scala&quot;       &quot;sed&quot;         &quot;sh&quot;          &quot;stata&quot;       &quot;zsh&quot;        
+## [21] &quot;highlight&quot;   &quot;Rcpp&quot;        &quot;tikz&quot;        &quot;dot&quot;         &quot;c&quot;          
+## [26] &quot;cc&quot;          &quot;fortran&quot;     &quot;fortran95&quot;   &quot;asy&quot;         &quot;cat&quot;        
+## [31] &quot;asis&quot;        &quot;stan&quot;        &quot;block&quot;       &quot;block2&quot;      &quot;js&quot;         
+## [36] &quot;css&quot;         &quot;sql&quot;         &quot;go&quot;          &quot;python&quot;      &quot;julia&quot;      
+## [41] &quot;sass&quot;        &quot;scss&quot;        &quot;theorem&quot;     &quot;lemma&quot;       &quot;corollary&quot;  
+## [46] &quot;proposition&quot; &quot;conjecture&quot;  &quot;definition&quot;  &quot;example&quot;     &quot;exercise&quot;   
+## [51] &quot;proof&quot;       &quot;remark&quot;      &quot;solution&quot;</code></pre>
+</div>
+<div id="reticulate-example" class="section level3">
+<h3>Reticulate: Example</h3>
+<p>So, imagine there's a dataset you want to work with in python, but the dataset is only available in R. Reticulate gives you a way to overcome this issue! For example, say we want to use the R dataset <code>PlantGrowth</code>.</p>
+<pre class="r"><code>#This is an R code chunk.
+library(reticulate)
+library(ggplot2)
+plantgrowth&lt;-PlantGrowth</code></pre>
+<p>Now that we've called our dataset in R, reticulate allows us to access the dataset from R in python and share things between the two!</p>
+<pre class="python"><code>#This is a Python code chunk.
+r.plantgrowth</code></pre>
+<pre><code>##     weight group
+## 0     4.17  ctrl
+## 1     5.58  ctrl
+## 2     5.18  ctrl
+## 3     6.11  ctrl
+## 4     4.50  ctrl
+## 5     4.61  ctrl
+## 6     5.17  ctrl
+## 7     4.53  ctrl
+## 8     5.33  ctrl
+## 9     5.14  ctrl
+## 10    4.81  trt1
+## 11    4.17  trt1
+## 12    4.41  trt1
+## 13    3.59  trt1
+## 14    5.87  trt1
+## 15    3.83  trt1
+## 16    6.03  trt1
+## 17    4.89  trt1
+## 18    4.32  trt1
+## 19    4.69  trt1
+## 20    6.31  trt2
+## 21    5.12  trt2
+## 22    5.54  trt2
+## 23    5.50  trt2
+## 24    5.37  trt2
+## 25    5.29  trt2
+## 26    4.92  trt2
+## 27    6.15  trt2
+## 28    5.80  trt2
+## 29    5.26  trt2</code></pre>
+<p>It also works the other way around! For example, say there is a python dataset we wish to access in R. In this case, say we want to access the python <code>penguins</code> dataset and build a plot of it in R. First, you want to load up the <code>penguins</code> dataset in python.</p>
+<pre class="python"><code>#This is a Python code chunk.
+import seaborn as sns
+penguins = sns.load_dataset(&#39;penguins&#39;)</code></pre>
+<p>Next, you want to grab the <code>penguins</code> dataset from the python code chunk and save it as something in R</p>
+<pre class="r"><code>#This is an R code chunk.
+penguins_r&lt;-py$penguins
+#note: Sometimes you&#39;ll get errors at this step if you&#39;re not working locally- don&#39;t worry! It will still knit just fine.</code></pre>
+<p>Now, you can build your plot of the python dataset in R! For example, here is a plot comparing penguin flipper length in millimeters against body mass in grams, colored by bill length in mm.</p>
+<pre class="r"><code>#This is an R code chunk.
+library(ggplot2)
+ggplot(penguins_r, aes(x=flipper_length_mm, y=body_mass_g, color=bill_length_mm))+geom_point()+xlab(&quot;Flipper Length (mm)&quot;) +ylab(&quot;Body Mass (g)&quot;)+ggtitle(&quot;Penguin Body Mass Increases as Flipper Length and Bill Length Increases&quot;)+ labs(color=&quot;Bill Length (mm)&quot;)</code></pre>
+<pre><code>## Warning: Removed 2 rows containing missing values (geom_point).</code></pre>
+<p><img src="../../../../../post/blog_post_reticulate_files/figure-html/unnamed-chunk-6-1.png" width="672" /></p>
+</div>
+<div id="check-out-some-of-my-other-work" class="section level3">
+<h3>Check out some of my other work!</h3>
+<p><a href="../../../../../project/project1/">Link to Project 1</a></p>
+<p><a href="../../../../../project/project2/">Link to Project 2</a></p>
+<div class="figure">
+<img src="https://higherlogicdownload.s3.amazonaws.com/AAFCS/1c95de14-d78f-40b8-a6ef-a1fb628c68fe/UploadedImages/YesToFCS/Graphics/bottomborder.jpg" />
+
+</div>
+</div>
+
+            
+        <hr>         <div class="related-posts">
+                <h5>Related Posts</h5>
+                
+              </div> 
+            </div>
+          </div>
+
+   <hr>  <div class="disqus">
+  <div id="disqus_thread"></div>
+  <script type="text/javascript">
+
+    (function() {
+      
+      
+      if (window.location.hostname == "localhost")
+        return;
+
+      var disqus_shortname = '';
+      var dsq = document.createElement('script'); dsq.type = 'text/javascript'; dsq.async = true;
+      dsq.src = '//' + disqus_shortname + '.disqus.com/embed.js';
+      (document.getElementsByTagName('head')[0] || document.getElementsByTagName('body')[0]).appendChild(dsq);
+    })();
+  </script>
+  <noscript>Please enable JavaScript to view the <a href="http://disqus.com/?ref_noscript">comments powered by Disqus.</a></noscript>
+  <a href="http://disqus.com/" class="dsq-brlink">comments powered by <span class="logo-disqus">Disqus</span></a>
+</div> 
+        </div>
+      </div>
+    </div>
+
+    
+    <footer>
+  <div id="footer">
+    <div class="container">
+      <p class="text-muted">&copy; All rights reserved. Powered by <a href="https://gohugo.io/">Hugo</a> and
+      <a href="http://www.github.com/nurlansu/hugo-sustain/">sustain</a> with ♥</p>
+    </div>
+  </div>
+</footer>
+<div class="footer"></div>
+
+
+<script src="https://ajax.googleapis.com/ajax/libs/jquery/1.11.3/jquery.min.js"></script>
+
+<script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/js/bootstrap.min.js" integrity="sha384-Tc5IQib027qvyjSMfHjOMaLkfuWVxZxUPnCJA7l2mCWNIpG9mGCD8wGNIcPD7Txa" crossorigin="anonymous"></script>
+<script src="../../../../../js/docs.min.js"></script>
+<script src="../../../../../js/main.js"></script>
+
+<script src="../../../../../js/ie10-viewport-bug-workaround.js"></script>
+
+
+    
+  </body>
+</html>

@@ -1,0 +1,58 @@
+---
+title: "Blog Post: Reticulate"
+output: html_document
+---
+### Reticulate: Introduction
+Reticulate is a great tool; it allows you to write code chunks in multiple languages and have these code chunks be able to communicate with eachother. Check out the list of languages you can use with this feature:
+
+```{r}
+#This is an R code chunk.
+names(knitr::knit_engines$get())
+```
+###Reticulate: Example
+So, imagine there's a dataset you want to work with in python, but the dataset is only available in R. Reticulate gives you a way to overcome this issue!
+For example, say we want to use the R dataset `PlantGrowth`. 
+```{r}
+#This is an R code chunk.
+library(reticulate)
+library(ggplot2)
+plantgrowth<-PlantGrowth
+```
+Now that we've called our dataset in R, reticulate allows us to access the dataset from R in python and share things between the two!
+```{python}
+#This is a Python code chunk.
+r.plantgrowth
+```
+It also works the other way around!
+For example, say there is a python dataset we wish to access in R. In this case, say we want to access the python `penguins` dataset and build a plot of it in R. First, you want to load up the `penguins` dataset in python.
+```{python}
+#This is a Python code chunk.
+import seaborn as sns
+penguins = sns.load_dataset('penguins')
+```
+Next, you want to grab the `penguins` dataset from the python code chunk and save it as something in R
+```{r}
+#This is an R code chunk.
+penguins_r<-py$penguins
+#note: Sometimes you'll get errors at this step if you're not working locally- don't worry! It will still knit just fine.
+```
+Now, you can build your plot of the python dataset in R! For example, here is a plot comparing penguin flipper length in millimeters against body mass in grams, colored by bill length in mm.
+```{r}
+#This is an R code chunk.
+library(ggplot2)
+ggplot(penguins_r, aes(x=flipper_length_mm, y=body_mass_g, color=bill_length_mm))+geom_point()+xlab("Flipper Length (mm)") +ylab("Body Mass (g)")+ggtitle("Penguin Body Mass Increases as Flipper Length and Bill Length Increases")+ labs(color="Bill Length (mm)")
+
+```
+
+###Check out some of my other work!
+
+[Link to Project 1](/project/project1/)
+
+[Link to Project 2](/project/project2/)
+
+
+
+![](https://higherlogicdownload.s3.amazonaws.com/AAFCS/1c95de14-d78f-40b8-a6ef-a1fb628c68fe/UploadedImages/YesToFCS/Graphics/bottomborder.jpg)
+
+
+
